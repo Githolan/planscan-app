@@ -6,10 +6,26 @@
 node_modules/
 npm-debug.log*
 yarn-error.log*
-.pnpm-store/
 dist/
 build/
 coverage/
+
+# Logs
+*.log
+*.log.*
+
+# Artefactos de análisis (solo dentro de analisis_tecnico)
+analisis_tecnico/*.md
+analisis_tecnico/*.log
+analisis_tecnico/*.json
+analisis_tecnico/output/
+analisis_tecnico/.cache/
+
+# Sistemas/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
 # Backups y temporales
 *.bak
@@ -17,42 +33,5 @@ coverage/
 *.current
 *.current.*
 *.old
-*.tmp
-*.swp
-
-# Logs / dumps
-*.log
-*.log.*
-*.pid
-*.seed
-*.seed.*
-*.db
-*.sqlite*
-
-# Paquetes binarios
-*.zip
-*.tar
-*.tar.gz
-*.7z
-*.rar
-
-# Archivos pesados (no críticos para código)
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.webp
-*.svg
-
-# Sistemas/IDE
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.iml
-
-# Generados por la app
-/analisis_tecnico/output/
-/analisis_tecnico/.cache/
-analisis_tecnico/.*.md
-analisis_tecnico/
+plan06.jpg
+/*.jpg
