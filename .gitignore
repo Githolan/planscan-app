@@ -1,0 +1,56 @@
+# Secrets / entorno
+.env
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+dist/
+build/
+coverage/
+
+# Backups y temporales
+*.bak
+*.bak.*
+*.current
+*.current.*
+*.old
+*.tmp
+*.swp
+
+# Logs / dumps
+*.log
+*.log.*
+*.pid
+*.seed
+*.seed.*
+*.db
+*.sqlite*
+
+# Paquetes binarios
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# Archivos pesados (no críticos para código)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.svg
+
+# Sistemas/IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Generados por la app
+/analisis_tecnico/output/
+/analisis_tecnico/.cache/

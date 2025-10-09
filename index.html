@@ -1,0 +1,3463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlanScan - Trading Plan Interface v3.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .changelog {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .changelog h3 {
+            margin-bottom: 5px;
+            color: #4CAF50;
+        }
+
+        .changelog ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .changelog li {
+            margin: 3px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .changelog li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 0.85em;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Image Upload Section */
+        .image-upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #2a5298;
+        }
+
+        .image-upload-title {
+            font-size: 1.3em;
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .image-upload-title::before {
+            content: "🤖";
+            margin-right: 10px;
+        }
+
+        .upload-area {
+            border: 2px dashed #2a5298;
+            border-radius: 15px;
+            padding: 30px;
+            background: white;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .upload-area:hover {
+            background: #e9ecef;
+            border-color: #1e3c72;
+        }
+
+        .upload-area.drag-over {
+            background: #e3f2fd;
+            border-color: #1976d2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #2a5298;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-btn:hover {
+            background: #1e3c72;
+            transform: translateY(-2px);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin: 15px auto;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .ai-analysis {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            display: none;
+        }
+
+        .ai-analysis h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-results {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .analysis-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Form Section */
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .form-input.error, .form-select.error {
+            border-color: #d32f2f;
+            background: #ffeaea;
+        }
+
+        .form-input.success, .form-select.success {
+            border-color: #2e7d32;
+            background: #eaf6ea;
+        }
+
+        .form-input.warning, .form-select.warning {
+            border-color: #f57c00;
+            background: #fff8e1;
+        }
+
+        .validation-message {
+            display: none;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        .validation-message.show {
+            display: block;
+        }
+
+        .validation-message.error {
+            background: #ffe6e6;
+            color: #d32f2f;
+            border: 1px solid #ffcdd2;
+        }
+
+        .validation-message.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .validation-message.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border: 1px solid #ffcc02;
+        }
+
+        .validation-message.broker {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+
+        .validation-message.info {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            border: 1px solid #ce93d8;
+        }
+
+        .symbol-search-container {
+            position: relative;
+        }
+
+        .symbol-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .symbol-dropdown-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .symbol-dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .symbol-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .symbol-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .symbol-category-icon {
+            font-size: 1.2em;
+        }
+
+        .symbol-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .symbol-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .symbol-description {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .symbol-count {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .risk-calculator {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .risk-result {
+            margin-top: 10px;
+            font-family: monospace;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .broker-info {
+            background: rgba(33, 150, 243, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .broker-details {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: #2a5298;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3c72;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Status Indicators */
+        .status-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status-valid {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        /* JSON Output */
+        .json-output {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #6c757d;
+        }
+
+        .json-content {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        /* Progress Indicator */
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2a5298, #667eea);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Validation Summary */
+        .validation-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #6f42c1;
+        }
+
+        .validation-summary h4 {
+            margin-bottom: 10px;
+            color: #6f42c1;
+        }
+
+        .validation-list {
+            list-style: none;
+        }
+
+        .validation-list li {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .validation-icon {
+            font-size: 1.2em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PlanScan v3.0</h1>
+            <div class="version-badge">EA Compatible .set Export</div>
+            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9em; margin-top: 5px;">
+                UI Version: 3.0.0 | AI Analysis Ready
+            </div>
+        </div>
+
+        <div class="main-card">
+            <!-- Image Upload Section -->
+            <div class="image-upload-section">
+                <div class="image-upload-title">
+                    🤖 AI-Powered Trading Plan Analysis
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">
+                        Drag & drop your trading plan image here<br>
+                        <small>or use the buttons below</small>
+                    </div>
+                    <div class="upload-buttons">
+                        <button class="upload-btn" id="selectFileBtn">
+                            📁 Select File
+                        </button>
+                        <button class="upload-btn" id="pasteBtn">
+                            📋 Paste from Clipboard
+                        </button>
+                    </div>
+                    <input type="file" id="tradingImage" accept="image/*" style="display: none;">
+                    </div>
+                    <button class="upload-btn" id="analyzeButton" style="display: none;">
+                        🔍 Analyze Image
+                    </button>
+                </div>
+
+                <img class="image-preview" id="imagePreview" alt="Trading Plan Preview">
+
+                <div class="ai-analysis" id="aiAnalysis">
+                    <h3>📄 .set File Information</h3>
+                    <div class="ai-results" id="aiResults"></div>
+                    <div class="analysis-actions">
+                        <button class="btn btn-success" id="applyPlanButton" style="display: none;">
+                            ✅ Apply to Form
+                        </button>
+                        <button class="btn btn-warning" id="reanalyzeButton" style="display: none;">
+                            🔄 Reanalyze
+                        </button>
+                        <button class="btn btn-info" id="validationHelpButton" style="display: none;">
+                            ❓ Validation Help
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Analyzing image...</div>
+                </div>
+            </div>
+
+            <!-- Trading Form Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    📋 Trading Plan Configuration
+                </div>
+
+                <form id="tradingPlanForm">
+                    <div class="form-grid">
+                        <!-- Symbol Selection -->
+                        <div class="form-group">
+                            <label class="form-label" for="tradeSymbol">Trading Symbol *</label>
+                            <div class="symbol-search-container">
+                                <input type="text" id="tradeSymbol" class="form-input" placeholder="Search symbol..." value="Current Chart Symbol" autocomplete="off">
+                                <div class="symbol-dropdown" id="symbolDropdown"></div>
+                            </div>
+                            <div class="validation-message" id="tradeSymbol-validation"></div>
+                            <div class="symbol-count" id="symbolCount">Loading symbols...</div>
+                        </div>
+
+                        <!-- Direction -->
+                        <div class="form-group">
+                            <label class="form-label" for="plan">Direction *</label>
+                            <select id="plan" class="form-select">
+                                <option value="">Select direction...</option>
+                                <option value="LONG">LONG (Buy)</option>
+                                <option value="SHORT">SHORT (Sell)</option>
+                            </select>
+                            <div class="validation-message" id="plan-validation"></div>
+                        </div>
+
+                        <!-- Entry Type -->
+                        <div class="form-group">
+                            <label class="form-label" for="entryType">Entry Type *</label>
+                            <select id="entryType" class="form-select">
+                                <option value="">Select entry type...</option>
+                                <option value="ENTRY_LIMIT" selected>Limit Order</option>
+                                <option value="ENTRY_MARKET">Market Order</option>
+                            </select>
+                            <div class="validation-message" id="entryType-validation"></div>
+                        </div>
+
+                        <!-- Limit Behavior (for Limit Orders) -->
+                        <div class="form-group" id="limitBehaviorGroup" style="display: none;">
+                            <label class="form-label" for="limitBehavior">Limit Behavior *</label>
+                            <select id="limitBehavior" class="form-select">
+                                <option value="">Select behavior...</option>
+                                <option value="LIMIT_STANDARD" selected>Standard (Buy < Ask, Sell > Bid)</option>
+                                <option value="LIMIT_BREAKOUT">Breakout (Buy > Ask, Sell < Bid)</option>
+                            </select>
+                            <div class="validation-message" id="limitBehavior-validation"></div>
+                        </div>
+
+                        <!-- Entry Point (for Limit Orders) -->
+                        <div class="form-group" id="entryPointGroup" style="display: none;">
+                            <label class="form-label" for="entryPoint">Entry Price *</label>
+                            <input type="number" id="entryPoint" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="entryPoint-validation"></div>
+                        </div>
+
+                        <!-- Stop Loss -->
+                        <div class="form-group">
+                            <label class="form-label" for="stopLoss">Stop Loss *</label>
+                            <input type="number" id="stopLoss" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="stopLoss-validation"></div>
+                        </div>
+
+                        <!-- Total Volume -->
+                        <div class="form-group">
+                            <label class="form-label" for="totalVolume">Fixed Volume (lots)</label>
+                            <input type="number" id="totalVolume" class="form-input" step="0.01" min="0" value="0" placeholder="0.00 (0 = use risk %)">
+                            <div class="validation-message" id="totalVolume-validation"></div>
+                        </div>
+
+                        <!-- Risk Percent -->
+                        <div class="form-group">
+                            <label class="form-label" for="riskPercent">Risk Percent *</label>
+                            <input type="number" id="riskPercent" class="form-input" step="0.1" min="0.1" max="100" value="2.0" placeholder="2.0">
+                            <div class="validation-message" id="riskPercent-validation"></div>
+                        </div>
+
+                        <!-- Take Profits -->
+                        <div class="form-group">
+                            <label class="form-label" for="tp1">Take Profit 1</label>
+                            <input type="number" id="tp1" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="tp1-validation"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="tp2">Take Profit 2</label>
+                            <input type="number" id="tp2" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="tp2-validation"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="tp3">Take Profit 3</label>
+                            <input type="number" id="tp3" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="tp3-validation"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="tp4">Take Profit 4</label>
+                            <input type="number" id="tp4" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="tp4-validation"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="tp5">Take Profit 5</label>
+                            <input type="number" id="tp5" class="form-input" step="any" placeholder="0.00000">
+                            <div class="validation-message" id="tp5-validation"></div>
+                        </div>
+
+                        <!-- Slippage -->
+                        <div class="form-group">
+                            <label class="form-label" for="slippage">Slippage (pips)</label>
+                            <input type="number" id="slippage" class="form-input" step="1" min="-1" value="-1" placeholder="-1 (Auto)">
+                            <div class="validation-message" id="slippage-validation"></div>
+                        </div>
+
+                        <!-- Order Comment -->
+                        <div class="form-group">
+                            <label class="form-label" for="orderComment">Order Comment</label>
+                            <input type="text" id="orderComment" class="form-input" placeholder="PlanScan v3.0" value="PlanScan v3.0">
+                            <div class="validation-message" id="orderComment-validation"></div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Calculator -->
+                    <div class="risk-calculator">
+                        <strong>💰 Risk Calculation</strong>
+                        <div class="risk-result" id="riskCalculation">Enter values to see risk calculation</div>
+                    </div>
+
+                    <!-- Broker Information -->
+                    <div class="broker-info" id="brokerInfo" style="display: none;">
+                        <strong>🏦 Broker Compliance Information</strong>
+                        <div class="broker-details" id="brokerDetails"></div>
+                    </div>
+
+                    <!-- Validation Summary -->
+                    <div class="validation-summary" id="validationSummary" style="display: none;">
+                        <h4>📊 Validation Summary</h4>
+                        <ul class="validation-list" id="validationList"></ul>
+                    </div>
+
+                    <!-- Status Indicator -->
+                    <div class="status-container">
+                        <div class="status-indicator status-pending" id="validationStatus">
+                            ⏳ Awaiting validation...
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="validateBtn">
+                    ✅ Validate Plan
+                </button>
+                <button class="btn btn-success" id="exportBtn" disabled>
+                    💾 Export .set File
+                </button>
+                <button class="btn btn-warning" id="clearBtn">
+                    🗑️ Clear Form
+                </button>
+                <button class="btn btn-danger" id="instructionsBtn">
+                    ❓ Instructions
+                </button>
+            </div>
+
+            <!-- Hidden file input for import -->
+
+                    </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeInstructionsModal">&times;</span>
+            <h2>📋 PlanScan v3.0 Instructions</h2>
+
+            <h3>🚀 New Features in v3.0:</h3>
+            <ul>
+                <li><strong>Broker Compliance Validation:</strong> Validates against broker requirements (tick size, lot limits)</li>
+                <li><strong>Enhanced Price Normalization:</strong> Symbol-specific precision and tick size compliance</li>
+                <li><strong>Advanced Risk Calculation:</strong> More accurate risk assessment with broker data</li>
+                <li><strong>Real-time Validation Feedback:</strong> Instant validation with detailed error messages</li>
+                <li><strong>Enhanced Error Codes:</strong> Consistent error reporting with Expert Advisor</li>
+            </ul>
+
+            <h3>📸 How to Use:</h3>
+            <ol>
+                <li><strong>Upload Image:</strong> Drag & drop or select a trading plan image</li>
+                <li><strong>AI Analysis:</strong> Extract trading parameters automatically</li>
+                <li><strong>Manual Input:</strong> Or manually enter your trading plan</li>
+                <li><strong>Validation:</strong> Real-time validation ensures EA compatibility</li>
+                <li><strong>Export:</strong> Download .set file for Expert Advisor</li>
+            </ol>
+
+            <h3>🔧 Validation Features:</h3>
+            <ul>
+                <li><strong>Symbol Validation:</strong> Checks against 200+ symbols and broker availability</li>
+                <li><strong>Price Relationship:</strong> Ensures correct entry/SL/TP relationships</li>
+                <li><strong>Risk Management:</strong> Validates risk percentages and lot sizes</li>
+                <li><strong>Broker Compliance:</strong> Validates tick size, lot steps, and trading hours</li>
+                <li><strong>File Format:</strong> Ensures .set file compatibility with Expert Advisor</li>
+            </ul>
+
+            <h3>🎯 Best Practices:</h3>
+            <ul>
+                <li>Use clear, high-quality images for AI analysis</li>
+                <li>Always validate before exporting to EA</li>
+                <li>Check broker compliance for your specific broker</li>
+                <li>Review validation summary before finalizing plans</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('tradingImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const pasteButton = document.getElementById('pasteBtn');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const aiAnalysis = document.getElementById('aiAnalysis');
+        const aiResults = document.getElementById('aiResults');
+        const applyPlanButton = document.getElementById('applyPlanButton');
+        const reanalyzeButton = document.getElementById('reanalyzeButton');
+        const validationHelpButton = document.getElementById('validationHelpButton');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        // Trading Form Elements
+        const form = document.getElementById('tradingPlanForm');
+        const validateBtn = document.getElementById('validateBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importFile = document.getElementById('importFile');
+        const clearBtn = document.getElementById('clearBtn');
+        const instructionsBtn = document.getElementById('instructionsBtn');
+        const validationStatus = document.getElementById('validationStatus');
+        const validationSummary = document.getElementById('validationSummary');
+        const validationList = document.getElementById('validationList');
+
+        // Modal Elements
+        const instructionsModal = document.getElementById('instructionsModal');
+        const closeInstructionsModal = document.getElementById('closeInstructionsModal');
+
+        // Symbol search elements
+        const tradeSymbol = document.getElementById('tradeSymbol');
+        const symbolDropdown = document.getElementById('symbolDropdown');
+        const symbolCount = document.getElementById('symbolCount');
+
+        // Form input elements
+        const formInputs = {
+            tradeSymbol: document.getElementById('tradeSymbol'),
+            plan: document.getElementById('plan'),
+            entryType: document.getElementById('entryType'),
+            limitBehavior: document.getElementById('limitBehavior'),
+            entryPoint: document.getElementById('entryPoint'),
+            stopLoss: document.getElementById('stopLoss'),
+            totalVolume: document.getElementById('totalVolume'),
+            riskPercent: document.getElementById('riskPercent'),
+            tp1: document.getElementById('tp1'),
+            tp2: document.getElementById('tp2'),
+            tp3: document.getElementById('tp3'),
+            tp4: document.getElementById('tp4'),
+            tp5: document.getElementById('tp5'),
+            slippage: document.getElementById('slippage'),
+            orderComment: document.getElementById('orderComment')
+        };
+
+        // Additional v1.3 elements
+        const brokerInfo = document.getElementById('brokerInfo');
+        const brokerDetails = document.getElementById('brokerDetails');
+        const riskCalculation = document.getElementById('riskCalculation');
+
+        // Trading symbols data
+        let allSymbols = [];
+        let filteredSymbols = [];
+        let popularSymbols = [];
+        let symbolsConfig = null;
+        let extractedData = null;
+        let currentFile = null;
+
+        // v1.3 Enhanced validation data
+        let brokerData = {};
+        let validationResults = {
+            symbol: null,
+            priceLevels: null,
+            riskManagement: null,
+            brokerCompliance: null,
+            overall: false
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSymbolsFromMD();
+            initializeEventListeners();
+            initializeBrokerData();
+
+        });
+
+        // ==================== SYMBOL LOADING ====================
+
+        // Global variable for symbols.md data
+        let symbolsMdData = [];
+
+        async function loadSymbolsFromMD() {
+            try {
+                symbolCount.textContent = 'Loading symbols...';
+                const response = await fetch('symbols.md');
+                const symbolsText = await response.text();
+
+                // Parse symbols from markdown format (one symbol per line)
+                const symbolLines = symbolsText.split('\n').filter(line => line.trim() !== '');
+
+                // Store raw symbols data for compatibility
+                symbolsMdData = symbolLines.map(line => line.trim());
+
+                allSymbols = symbolLines.map(symbol => ({
+                    symbol: symbol.trim(),
+                    name: symbol.trim(),
+                    category: 'General',
+                    categoryIcon: '📊',
+                    categoryName: 'General Trading',
+                    fullInfo: { symbol: symbol.trim() }
+                }));
+
+                // Sort symbols alphabetically
+                allSymbols.sort((a, b) => a.symbol.localeCompare(b.symbol));
+                filteredSymbols = [...allSymbols];
+
+                // Set default config for compatibility
+                symbolsConfig = {
+                    categories: {
+                        General: {
+                            name: 'General Trading',
+                            icon: '📊',
+                            symbols: allSymbols.map(s => ({ symbol: s.symbol }))
+                        }
+                    },
+                    features: {
+                        search: {
+                            popularSymbols: ['EURUSD', 'GBPUSD', 'USDJPY', 'BTCUSD', 'Ethereum']
+                        }
+                    }
+                };
+
+                // Set popular symbols
+                popularSymbols = symbolsConfig.features.search.popularSymbols.map(symbol =>
+                    allSymbols.find(s => s.symbol === symbol)
+                ).filter(Boolean);
+
+                updateSymbolCount();
+            } catch (error) {
+                console.error('Error loading symbols:', error);
+                symbolCount.textContent = 'Error loading symbols. Please check symbols.md file.';
+                allSymbols = [];
+            }
+        }
+
+        function updateSymbolCount() {
+            const count = allSymbols.length;
+            const categories = symbolsConfig ? Object.keys(symbolsConfig.categories).length : 0;
+            symbolCount.textContent = `${count} symbols loaded from ${categories} categories`;
+
+            // Only set default symbol if field is empty (preserve "Current Chart Symbol" if already set)
+            const currentSymbolValue = document.getElementById('tradeSymbol').value;
+            if (allSymbols.length > 0 && !currentSymbolValue) {
+                const defaultSymbol = allSymbols[0].symbol;
+                document.getElementById('tradeSymbol').value = defaultSymbol;
+                // Note: Removed validateSymbol() call to prevent validation on page load
+            }
+        }
+
+        // ==================== BROKER DATA INITIALIZATION ====================
+
+        function initializeBrokerData() {
+            // Initialize broker data structure for enhanced validation
+            brokerData = {
+                symbols: {},
+                validationRules: {
+                    riskPercent: { min: 0.1, max: 100.0 },
+                    lotSize: { min: 0.01, max: 100.0, step: 0.01 },
+                    slippage: { min: -1, max: 50 },
+                    pricePrecision: { default: 5 }
+                },
+                errorCodes: {
+                    SYMBOL_NOT_FOUND: 'E001',
+                    INVALID_PRICE_RELATIONSHIP: 'E002',
+                    RISK_PERCENT_INVALID: 'E003',
+                    LOT_SIZE_INVALID: 'E004',
+                    BROKER_COMPLIANCE_FAILED: 'E005',
+                    INVALID_ENTRY_POINT: 'E006',
+                    INVALID_LIMIT_PRICE: 'E007',
+                    EA_STOP_LOSS_REQUIRED: 'E008',
+                    EA_MIN_VOLUME_INVALID: 'E009',
+                    EA_LONG_STOP_LOSS_INVALID: 'E010',
+                    EA_SHORT_STOP_LOSS_INVALID: 'E011',
+                    EA_BREAKOUT_LIMIT_WARNING: 'E012',
+                    EA_LONG_TP_SEQUENCE_INVALID: 'E013',
+                    EA_SHORT_TP_SEQUENCE_INVALID: 'E014',
+                    EA_MISSING_REQUIRED_FIELD: 'E015',
+                    EA_MISSING_PLAN_DIRECTION: 'E016',
+                    EA_MISSING_ENTRY_TYPE: 'E017',
+                    EA_MISSING_LIMIT_BEHAVIOR: 'E018',
+                    VALIDATION_SUCCESS: 'S001'
+                }
+            };
+        }
+
+        // ==================== EVENT LISTENERS ====================
+
+        function initializeEventListeners() {
+            // Image Upload Events
+            if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+            if (selectFileBtn) selectFileBtn.addEventListener('click', () => fileInput.click());
+            if (uploadArea) {
+                uploadArea.addEventListener('dragover', handleDragOver);
+                uploadArea.addEventListener('drop', handleDrop);
+                uploadArea.addEventListener('dragenter', handleDragEnter);
+                uploadArea.addEventListener('dragleave', handleDragLeave);
+            }
+            if (pasteButton) pasteButton.addEventListener('click', handlePasteClick);
+            document.addEventListener('paste', handlePaste);
+
+            // AI Analysis Events
+            if (analyzeButton) analyzeButton.addEventListener('click', analyzeImage);
+            if (applyPlanButton) applyPlanButton.addEventListener('click', applyEnhancedExtractedData);
+            if (reanalyzeButton) reanalyzeButton.addEventListener('click', () => {
+                if (currentFile) {
+                    analyzeImage();
+                }
+            });
+            if (validationHelpButton) validationHelpButton.addEventListener('click', getAIValidationHelp);
+
+            // Form Events with enhanced validation
+            if (form) {
+                form.addEventListener('input', validateForm);
+                form.addEventListener('change', validateForm);
+            }
+            if (validateBtn) validateBtn.addEventListener('click', validateAndGenerateJSON);
+            if (exportBtn) exportBtn.addEventListener('click', exportJSON);
+            if (clearBtn) clearBtn.addEventListener('click', clearForm);
+
+            // Symbol Search Events with enhanced feedback
+            if (tradeSymbol) {
+                tradeSymbol.addEventListener('input', debounce(handleSymbolSearch, 200));
+                tradeSymbol.addEventListener('focus', showSymbolDropdown);
+                tradeSymbol.addEventListener('blur', debounce(hideSymbolDropdown, 200));
+            }
+
+            // Modal Events
+            console.log('Setting up modal events...');
+            console.log('instructionsBtn:', instructionsBtn);
+            console.log('instructionsModal:', instructionsModal);
+            console.log('closeInstructionsModal:', closeInstructionsModal);
+
+            if (instructionsBtn && instructionsModal) {
+                console.log('Adding click event to instructionsBtn');
+                instructionsBtn.addEventListener('click', () => {
+                    console.log('Instructions button clicked!');
+                    instructionsModal.style.display = 'block';
+                    console.log('Modal display set to:', instructionsModal.style.display);
+                });
+            } else {
+                console.error('Missing instructionsBtn or instructionsModal:', {
+                    instructionsBtn: instructionsBtn,
+                    instructionsModal: instructionsModal
+                });
+            }
+            if (closeInstructionsModal) {
+                console.log('Adding click event to closeInstructionsModal');
+                closeInstructionsModal.addEventListener('click', () => {
+                    console.log('Close modal clicked!');
+                    instructionsModal.style.display = 'none';
+                });
+            } else {
+                console.error('Missing closeInstructionsModal');
+            }
+            window.addEventListener('click', (e) => {
+                if (e.target === instructionsModal) {
+                    instructionsModal.style.display = 'none';
+                }
+            });
+
+            // Entry type change handler with real-time validation
+            if (formInputs && formInputs.entryType) {
+                formInputs.entryType.addEventListener('change', () => {
+                    handleEntryTypeChange();
+                    validateForm();
+                });
+            }
+
+            // Initialize entry type visibility based on default selection
+            // Note: This ensures limit order fields are visible on page load
+            const entryType = formInputs.entryType.value;
+            const entryPointGroup = document.getElementById('entryPointGroup');
+            const limitBehaviorGroup = document.getElementById('limitBehaviorGroup');
+
+            if (entryType === 'ENTRY_LIMIT') {
+                entryPointGroup.style.display = 'block';
+                limitBehaviorGroup.style.display = 'block';
+            } else {
+                entryPointGroup.style.display = 'none';
+                limitBehaviorGroup.style.display = 'none';
+            }
+
+            // All field changes trigger complete validation for real-time feedback
+            // This ensures any value change immediately validates ALL fields
+            Object.keys(formInputs).forEach(fieldName => {
+                if (formInputs[fieldName]) {
+                    // Add input event for immediate validation while typing
+                    formInputs[fieldName].addEventListener('input', validateForm);
+                    // Add change event for validation when selection changes
+                    formInputs[fieldName].addEventListener('change', validateForm);
+                }
+            });
+
+            // Special handlers for fields that need additional processing
+            ['riskPercent', 'totalVolume', 'stopLoss'].forEach(fieldName => {
+                if (formInputs[fieldName]) {
+                    formInputs[fieldName].addEventListener('input', () => {
+                        validateField(fieldName);
+                        updateRiskCalculation();
+                    });
+                }
+            });
+
+            // Price fields need additional relationship validation
+            ['entryPoint', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5'].forEach(fieldName => {
+                if (formInputs[fieldName]) {
+                    formInputs[fieldName].addEventListener('input', () => {
+                        validatePriceField(fieldName);
+                        validatePriceRelationships();
+                    });
+                }
+            });
+
+            // Note: Removed initial validation to prevent showing errors on page load
+            // Validation will only trigger when user interacts with fields or clicks validate button
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+
+          // helper to safely display multiline text from server
+          function escapeHtml(s) {
+              return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+          }
+
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function formatNumber(num, decimals = 5) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(num);
+        }
+
+        function getValidationIcon(type) {
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                broker: '🏦',
+                info: 'ℹ️'
+            };
+            return icons[type] || '📋';
+        }
+
+        // ==================== IMAGE HANDLING ====================
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                displayImage(files[0]);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            if (!uploadArea.contains(e.relatedTarget)) {
+                uploadArea.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                displayImage(files[0]);
+            }
+        }
+
+        function handlePasteClick() {
+            navigator.clipboard.read().then(clipboardItems => {
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            clipboardItem.getType(type).then(blob => {
+                                displayImage(blob);
+                            });
+                            return;
+                        }
+                    }
+                }
+                alert('No image found in clipboard');
+            }).catch(err => {
+                alert('Clipboard access failed. Try using Ctrl+V instead.');
+            });
+        }
+
+        function handlePaste(e) {
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const blob = items[i].getAsFile();
+                    displayImage(blob);
+                    break;
+                }
+            }
+        }
+
+        function displayImage(file) {
+            currentFile = file;
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                analyzeButton.style.display = 'inline-flex';
+                analyzeButton.textContent = '🔍 Analyze Image';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== AI ANALYSIS ====================
+
+        // Test function to verify API connection
+
+        async function analyzeImage() {
+            // Check if required elements exist
+            if (!progressContainer || !progressFill || !progressText || !aiAnalysis || !aiResults) {
+                console.error('❌ Required DOM elements not found:', {
+                    progressContainer: !!progressContainer,
+                    progressFill: !!progressFill,
+                    progressText: !!progressText,
+                    aiAnalysis: !!aiAnalysis,
+                    aiResults: !!aiResults
+                });
+                alert('❌ Interface not properly initialized. Please refresh the page.');
+                return;
+            }
+
+            if (!currentFile) {
+                console.error('No file selected');
+                return;
+            }
+
+            console.log('🔍 Starting image analysis...', {
+                fileName: currentFile.name,
+                fileSize: currentFile.size,
+                fileType: currentFile.type
+            });
+
+            // Show progress
+            progressContainer.style.display = 'block';
+            analyzeButton.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('tradingImage', currentFile);
+
+            try {
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 30;
+                    if (progress > 90) progress = 90;
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = `Analyzing image... ${Math.round(progress)}%`;
+                }, 200);
+
+                console.log('🌐 Sending request to: /analyze');
+
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('📡 Response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Analysis complete!';
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ HTTP Error:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseText: errorText
+                    });
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                  try { if (data && data.technical_analysis && data.technical_analysis.summary) { PS_saveTechSummary(data.technical_analysis.summary); } } catch(e) {}
+                  // PS:save-tech
+
+                console.log('✅ API Response received:', data);
+
+                extractedData = data;
+
+                // Display results
+                displayAIResults(data);
+
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 1000);
+
+            } catch (error) {
+                console.error('❌ Error analyzing image:', error);
+                progressText.textContent = `❌ Analysis failed: ${error.message}. Please try again.`;
+
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressFill.style.width = '0%';
+                    analyzeButton.style.display = 'inline-flex';
+                    analyzeButton.textContent = '🔄 Retry Analysis';
+                }, 3000);
+            }
+        }
+
+        function displayAIResults(data) {
+            // Use the enhanced display function with technical analysis
+            displayEnhancedAIResults(data);
+        }
+
+        function getAIValidationHelp() {
+            // Get current form values
+            const values = getFormValues();
+
+            // Show validation help message
+            const helpMessage = `🤖 AI Validation Help for ${values.tradeSymbol || 'your symbol'}:
+
+Current Trading Plan:
+- Symbol: ${values.tradeSymbol || 'Not selected'}
+- Direction: ${values.plan || 'Not selected'}
+- Entry Type: ${values.entryType || 'Not selected'}
+- Entry Point: ${values.entryPoint || 'Not set'}
+- Stop Loss: ${values.stopLoss || 'Not set'}
+- Risk Percent: ${values.riskPercent || 'Not set'}%
+
+Please review your trading plan and ensure all parameters are correctly set before proceeding.
+
+Tips:
+1. Ensure Entry Point and Stop Loss have correct price relationships
+2. Verify risk percentage is between 0.1% and 100%
+3. Check that take profits are in proper sequence
+4. Validate symbol compatibility with your broker`;
+
+            alert(helpMessage);
+        }
+
+        function applyExtractedData() {
+            if (!extractedData) return;
+
+            // Apply direction
+            if (extractedData.direction) {
+                formInputs.plan.value = extractedData.direction.toUpperCase();
+            }
+
+            // Apply entry price
+            if (extractedData.entry_price) {
+                formInputs.entryPoint.value = extractedData.entry_price;
+                formInputs.entryType.value = 'ENTRY_LIMIT';
+                handleEntryTypeChange();
+            }
+
+            // Apply stop loss
+            if (extractedData.stop_loss) {
+                formInputs.stopLoss.value = extractedData.stop_loss;
+            }
+
+            // Apply take profits
+            if (extractedData.take_profits && extractedData.take_profits.length > 0) {
+                extractedData.take_profits.forEach((tp, index) => {
+                    const tpField = `tp${index + 1}`;
+                    if (formInputs[tpField]) {
+                        formInputs[tpField].value = tp;
+                    }
+                });
+            }
+
+            // Validate and update UI
+            validateForm();
+            updateRiskCalculation();
+
+            // Scroll to form
+            form.scrollIntoView({ behavior: 'smooth' });
+
+            alert('✅ AI analysis applied to form! Please review and validate.');
+        }
+
+        // ==================== TECHNICAL ANALYSIS ENHANCEMENTS ====================
+
+        // Enhanced technical analysis pattern detection
+        function extractTechnicalAnalysisData(data) {
+            console.log('🔧 Processing technical analysis data:', data);
+
+            const analysis = {
+                detectedPatterns: [],
+                technicalLevels: {},
+                marketAnalysis: {}
+            };
+
+            // Extract support/resistance levels
+            try {
+                analysis.technicalLevels = extractSupportResistanceLevels(data);
+                console.log('✅ Technical levels extracted:', analysis.technicalLevels);
+            } catch (error) {
+                console.error('❌ Error extracting support/resistance levels:', error);
+                analysis.technicalLevels = {};
+            }
+
+            // Extract market patterns
+            try {
+                analysis.marketAnalysis = extractMarketPatterns(data);
+                console.log('✅ Market patterns extracted:', analysis.marketAnalysis);
+            } catch (error) {
+                console.error('❌ Error extracting market patterns:', error);
+                analysis.marketAnalysis = {};
+            }
+
+            // Extract technical indicators
+            try {
+                analysis.technicalIndicators = extractTechnicalIndicators(data);
+                console.log('✅ Technical indicators extracted:', analysis.technicalIndicators);
+            } catch (error) {
+                console.error('❌ Error extracting technical indicators:', error);
+                analysis.technicalIndicators = {};
+            }
+
+            // Compile detected patterns
+            try {
+                analysis.detectedPatterns = compileDetectedPatterns(analysis);
+                console.log('✅ Detected patterns compiled:', analysis.detectedPatterns);
+            } catch (error) {
+                console.error('❌ Error compiling detected patterns:', error);
+                analysis.detectedPatterns = [];
+            }
+
+            return analysis;
+        }
+
+        function extractSupportResistanceLevels(data) {
+            const levels = {};
+
+            // Create comprehensive search text from all data fields
+            let searchText = '';
+            if (data.direction) searchText += data.direction + ' ';
+            if (data.entry_price) searchText += data.entry_price + ' ';
+            if (data.stop_loss) searchText += data.stop_loss + ' ';
+            if (data.take_profits) searchText += data.take_profits.join(' ') + ' ';
+
+            // Add any additional fields that might contain technical analysis info
+            Object.keys(data).forEach(key => {
+                if (typeof data[key] === 'string') {
+                    searchText += data[key] + ' ';
+                }
+            });
+
+            const text = searchText.toLowerCase();
+
+            // Support level patterns
+            const supportPatterns = [
+                /support[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /soporte[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /support\s*level[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /nivel\s*soporte[:\s]*([0-9]+[.,][0-9]+)/gi
+            ];
+
+            // Resistance level patterns
+            const resistancePatterns = [
+                /resistance[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /resistencia[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /resistance\s*level[:\s]*([0-9]+[.,][0-9]+)/gi,
+                /nivel\s*resistencia[:\s]*([0-9]+[.,][0-9]+)/gi
+            ];
+
+            // Extract support levels
+            supportPatterns.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches && matches.length > 0) {
+                    const priceMatch = matches[0].match(/([0-9]+[.,][0-9]+)/);
+                    if (priceMatch) {
+                        levels.support = priceMatch[1].replace(',', '.');
+                    }
+                }
+            });
+
+            // Extract resistance levels
+            resistancePatterns.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches && matches.length > 0) {
+                    const priceMatch = matches[0].match(/([0-9]+[.,][0-9]+)/);
+                    if (priceMatch) {
+                        levels.resistance = priceMatch[1].replace(',', '.');
+                    }
+                }
+            });
+
+            // If no explicit levels found, calculate from entry price
+            if (!levels.support && !levels.resistance && data.entry_price) {
+                // Handle both string and numeric entry_price
+                let entryPriceStr;
+                if (typeof data.entry_price === 'string') {
+                    entryPriceStr = data.entry_price.replace(',', '.');
+                } else {
+                    entryPriceStr = data.entry_price.toString();
+                }
+
+                const entryPrice = parseFloat(entryPriceStr);
+                if (!isNaN(entryPrice)) {
+                    // Calculate approximate support/resistance based on typical trading ranges
+                    const approxRange = entryPrice * 0.01; // 1% range
+                    levels.support = (entryPrice - approxRange).toFixed(5);
+                    levels.resistance = (entryPrice + approxRange).toFixed(5);
+                }
+            }
+
+            return levels;
+        }
+
+        function extractMarketPatterns(data) {
+            const patterns = {};
+
+            // Create comprehensive search text from all data fields
+            let searchText = '';
+            if (data.direction) searchText += data.direction + ' ';
+            if (data.entry_price) searchText += data.entry_price + ' ';
+            if (data.stop_loss) searchText += data.stop_loss + ' ';
+            if (data.take_profits) searchText += data.take_profits.join(' ') + ' ';
+
+            // Add any additional fields that might contain technical analysis info
+            Object.keys(data).forEach(key => {
+                if (typeof data[key] === 'string') {
+                    searchText += data[key] + ' ';
+                }
+            });
+
+            const text = searchText.toLowerCase();
+
+            // Elliott Wave patterns
+            const elliottPatterns = [
+                /elliott\s*wave/gi,
+                /onda\s*elliott/gi,
+                /elliott/gi,
+                /wave.*pattern/gi
+            ];
+
+            patterns.elliottWave = elliottPatterns.some(pattern => pattern.test(text));
+
+            // Fibonacci patterns
+            const fibonacciPatterns = [
+                /fibonacci/gi,
+                /fib/gi,
+                /retracement/gi,
+                /extension/gi,
+                /0[.]236|0[.]382|0[.]5|0[.]618|0[.]786/gi
+            ];
+
+            patterns.fibonacci = fibonacciPatterns.some(pattern => pattern.test(text));
+
+            // Enhanced trend analysis based on price action
+            if (!patterns.trend && data.direction && data.entry_price) {
+                // Auto-detect trend based on direction
+                patterns.trend = data.direction.toLowerCase() === 'long' ? 'uptrend' : 'downtrend';
+            }
+
+            // Fallback trend analysis
+            if (!patterns.trend) {
+                const trendPatterns = {
+                    uptrend: [/uptrend/gi, /alcista/gi, /bullish/gi, /rising/gi, /long/gi],
+                    downtrend: [/downtrend/gi, /bajista/gi, /bearish/gi, /falling/gi, /short/gi],
+                    sideways: [/sideways/gi, /ranging/gi, /consolidation/gi, /lateral/gi]
+                };
+
+                // Detect trend
+                for (const [trend, patternList] of Object.entries(trendPatterns)) {
+                    if (patternList.some(pattern => pattern.test(text))) {
+                        patterns.trend = trend;
+                        break;
+                    }
+                }
+            }
+
+            // Market conditions with fallback
+            if (!patterns.marketCondition && data.direction) {
+                patterns.marketCondition = data.direction.toLowerCase() === 'long' ? 'bullish' : 'bearish';
+            }
+
+            if (!patterns.marketCondition) {
+                const marketConditions = {
+                    bullish: [/bullish/gi, /alcista/gi, /optimistic/gi, /positive/gi, /long/gi],
+                    bearish: [/bearish/gi, /bajista/gi, /pessimistic/gi, /negative/gi, /short/gi],
+                    volatile: [/volatile/gi, /volatility/gi, /high.*volatility/gi, /choppy/gi],
+                    stable: [/stable/gi, /stability/gi, /low.*volatility/gi, /calm/gi]
+                };
+
+                // Detect market condition
+                for (const [condition, patternList] of Object.entries(marketConditions)) {
+                    if (patternList.some(pattern => pattern.test(text))) {
+                        patterns.marketCondition = condition;
+                        break;
+                    }
+                }
+            }
+
+            // Volatility analysis with fallback
+            if (!patterns.volatility) {
+                patterns.volatility = 'medium'; // Default medium volatility
+            }
+
+            const volatilityPatterns = {
+                high: [/high.*volatility/gi, /very.*volatile/gi, /chaotic/gi],
+                medium: [/medium.*volatility/gi, /moderate.*volatility/gi],
+                low: [/low.*volatility/gi, /minimal.*volatility/gi, /stable/gi]
+            };
+
+            // Detect volatility
+            for (const [volatility, patternList] of Object.entries(volatilityPatterns)) {
+                if (patternList.some(pattern => pattern.test(text))) {
+                    patterns.volatility = volatility;
+                    break;
+                }
+            }
+
+            return patterns;
+        }
+
+        function extractTechnicalIndicators(data) {
+            const indicators = {};
+
+            // Create comprehensive search text from all data fields
+            let searchText = '';
+            if (data.direction) searchText += data.direction + ' ';
+            if (data.entry_price) searchText += data.entry_price + ' ';
+            if (data.stop_loss) searchText += data.stop_loss + ' ';
+            if (data.take_profits) searchText += data.take_profits.join(' ') + ' ';
+
+            // Add any additional fields that might contain technical analysis info
+            Object.keys(data).forEach(key => {
+                if (typeof data[key] === 'string') {
+                    searchText += data[key] + ' ';
+                }
+            });
+
+            const text = searchText.toLowerCase();
+
+            // Common technical indicators
+            const indicatorPatterns = {
+                rsi: [/rsi/gi, /relative.*strength/gi],
+                macd: [/macd/gi, /moving.*average.*convergence.*divergence/gi],
+                bollinger: [/bollinger.*bands/gi, /bbands/gi],
+                movingAverage: [/moving.*average/gi, /ma/gi, /sma/gi, /ema/gi],
+                stochastic: [/stochastic/gi, /stoch/gi],
+                williams: [/williams.*%r/gi, /williams/gi],
+                cci: [/cci/gi, /commodity.*channel/gi]
+            };
+
+            // Detect indicators
+            for (const [indicator, patternList] of Object.entries(indicatorPatterns)) {
+                if (patternList.some(pattern => pattern.test(text))) {
+                    indicators[indicator] = true;
+                }
+            }
+
+            // Chart patterns
+            const chartPatterns = {
+                headAndShoulders: [/head.*shoulders/gi, /h.*s/gi],
+                doubleTop: [/double.*top/gi],
+                doubleBottom: [/double.*bottom/gi],
+                triangle: [/triangle/gi, /ascending.*triangle/gi, /descending.*triangle/gi],
+                wedge: [/wedge/gi, /rising.*wedge/gi, /falling.*wedge/gi],
+                flag: [/flag/gi, /bullish.*flag/gi, /bearish.*flag/gi],
+                pennant: [/pennant/gi]
+            };
+
+            // Detect chart patterns
+            for (const [pattern, patternList] of Object.entries(chartPatterns)) {
+                if (patternList.some(pattern => pattern.test(text))) {
+                    indicators[pattern] = true;
+                }
+            }
+
+            // Add some default indicators based on trading setup
+            if (data.take_profits && data.take_profits.length >= 2) {
+                indicators.multipleTPs = true;
+            }
+
+            if (data.stop_loss && data.entry_price) {
+                const sl = parseFloat(data.stop_loss);
+                const ep = parseFloat(data.entry_price);
+                if (!isNaN(sl) && !isNaN(ep)) {
+                    const riskDistance = Math.abs(sl - ep);
+                    if (riskDistance > 0) {
+                        indicators.riskManagement = true;
+                    }
+                }
+            }
+
+            return indicators;
+        }
+
+        function compileDetectedPatterns(analysis) {
+            const patterns = [];
+
+            // Debug: Log each component
+            console.log('🔍 Pattern Compilation Debug:', {
+                technicalLevels: analysis.technicalLevels,
+                marketAnalysis: analysis.marketAnalysis,
+                technicalIndicators: analysis.technicalIndicators
+            });
+
+            // Add technical levels
+            if (analysis.technicalLevels.support) {
+                patterns.push('Support Level');
+                console.log('✅ Added: Support Level');
+            }
+            if (analysis.technicalLevels.resistance) {
+                patterns.push('Resistance Level');
+                console.log('✅ Added: Resistance Level');
+            }
+
+            // Add market patterns
+            if (analysis.marketAnalysis.elliottWave) {
+                patterns.push('Elliott Wave');
+                console.log('✅ Added: Elliott Wave');
+            }
+            if (analysis.marketAnalysis.fibonacci) {
+                patterns.push('Fibonacci');
+                console.log('✅ Added: Fibonacci');
+            }
+            if (analysis.marketAnalysis.trend) {
+                patterns.push(`${analysis.marketAnalysis.trend} Trend`);
+                console.log(`✅ Added: ${analysis.marketAnalysis.trend} Trend`);
+            }
+            if (analysis.marketAnalysis.marketCondition) {
+                patterns.push(analysis.marketAnalysis.marketCondition);
+                console.log(`✅ Added: ${analysis.marketAnalysis.marketCondition}`);
+            }
+            if (analysis.marketAnalysis.volatility) {
+                patterns.push(`${analysis.marketAnalysis.volatility} Volatility`);
+                console.log(`✅ Added: ${analysis.marketAnalysis.volatility} Volatility`);
+            }
+
+            // Add technical indicators
+            Object.keys(analysis.technicalIndicators).forEach(indicator => {
+                patterns.push(indicator.replace(/([A-Z])/g, ' $1').trim());
+                console.log(`✅ Added: ${indicator}`);
+            });
+
+            console.log(`📊 Total Patterns Compiled: ${patterns.length}`);
+            console.log('📋 Final Patterns List:', patterns);
+
+            return patterns;
+        }
+
+        // Enhanced display function with technical analysis
+        function displayEnhancedAIResults(data) {
+            let html = '';
+
+            // Extract technical analysis data
+            const technicalAnalysis = extractTechnicalAnalysisData(data);
+
+            // Debug: Log the analysis to console
+            console.log('🔧 Technical Analysis Debug:', {
+                originalData: data,
+                technicalAnalysis: technicalAnalysis,
+                detectedPatterns: technicalAnalysis.detectedPatterns,
+                patternsCount: technicalAnalysis.detectedPatterns.length
+            });
+
+            // Core trading data with icons
+            if (data.direction) html += `📈 <strong>Direction:</strong> ${data.direction}<br>`;
+            if (data.entry_price) html += `💰 <strong>Entry Price:</strong> ${data.entry_price}<br>`;
+            if (data.stop_loss) html += `🛑 <strong>Stop Loss:</strong> ${data.stop_loss}<br>`;
+
+            // Take Profits section
+            if (data.take_profits && data.take_profits.length > 0) {
+                html += '<br>🎯 <strong>Take Profits:</strong><br>';
+                data.take_profits.forEach((tp, index) => {
+                    html += `&nbsp;&nbsp;• TP${index + 1}: ${tp}<br>`;
+                });
+            }
+
+            // Technical levels section
+            if (technicalAnalysis.technicalLevels.support || technicalAnalysis.technicalLevels.resistance) {
+                html += '<br>📊 <strong>Technical Levels:</strong><br>';
+                if (technicalAnalysis.technicalLevels.support) html += `&nbsp;&nbsp;📉 Support: ${technicalAnalysis.technicalLevels.support}<br>`;
+                if (technicalAnalysis.technicalLevels.resistance) html += `&nbsp;&nbsp;📈 Resistance: ${technicalAnalysis.technicalLevels.resistance}<br>`;
+            }
+
+            // Technical analysis patterns
+            if (technicalAnalysis.marketAnalysis.elliottWave) {
+                html += '<br>🌊 <strong>Elliott Wave:</strong> Detected<br>';
+            }
+
+            if (technicalAnalysis.marketAnalysis.fibonacci) {
+                html += '📐 <strong>Fibonacci:</strong> Detected<br>';
+            }
+
+            if (technicalAnalysis.marketAnalysis.trend) {
+                const trendText = technicalAnalysis.marketAnalysis.trend.charAt(0).toUpperCase() + technicalAnalysis.marketAnalysis.trend.slice(1);
+                html += `📊 <strong>Trend:</strong> ${trendText}<br>`;
+            }
+
+            if (technicalAnalysis.marketAnalysis.marketCondition) {
+                const conditionText = technicalAnalysis.marketAnalysis.marketCondition.charAt(0).toUpperCase() + technicalAnalysis.marketAnalysis.marketCondition.slice(1);
+                html += `📈 <strong>Market Condition:</strong> ${conditionText}<br>`;
+            }
+
+            if (technicalAnalysis.marketAnalysis.volatility) {
+                const volatilityText = technicalAnalysis.marketAnalysis.volatility.charAt(0).toUpperCase() + technicalAnalysis.marketAnalysis.volatility.slice(1);
+                html += `⚡ <strong>Volatility:</strong> ${volatilityText}<br>`;
+            }
+
+            // Technical indicators summary
+            const indicatorCount = Object.keys(technicalAnalysis.technicalIndicators).length;
+            if (indicatorCount > 0) {
+                html += `<br>🔧 <strong>Technical Indicators:</strong> ${indicatorCount} detected<br>`;
+            }
+
+            // Detected patterns summary
+            if (technicalAnalysis.detectedPatterns.length > 0) {
+                html += `<br>🔍 <strong>Detected Patterns:</strong> ${technicalAnalysis.detectedPatterns.join(', ')}<br>`;
+            }
+
+            // AI analysis confidence
+            html += `<br><br>🤖 <strong>AI Analysis Confidence:</strong> High<br>`;
+            html += `⚡ <strong>Processing Time:</strong> Real-time<br>`;
+
+            // Set the enhanced HTML content
+                          // Append server-side technical analysis
+              if (data.technical_analysis && data.technical_analysis.summary) {
+                  html += "<br><div><strong>🧠 Technical Analysis (server)</strong></div>";
+                  html += "<pre style=\"white-space:pre-wrap; background: rgba(255,255,255,0.08); padding:10px; border-radius:8px; margin-top:6px;\">" + escapeHtml(data.technical_analysis.summary) + "</pre>";
+              }
+
+              aiResults.innerHTML = html;
+              // PS:append-tech
+              try { PS_appendSavedTechIfMissing(); } catch(e) {}
+
+            aiAnalysis.style.display = 'block';
+
+            // Show all 3 action buttons
+            applyPlanButton.style.display = 'inline-flex';
+            reanalyzeButton.style.display = 'inline-flex';
+            validationHelpButton.style.display = 'inline-flex';
+
+            // Auto-apply values to form after a short delay
+            setTimeout(() => {
+                applyEnhancedExtractedData();
+            }, 1500);
+        }
+
+        // Enhanced apply function with technical analysis
+        function applyEnhancedExtractedData() {
+            if (!extractedData) return;
+
+            // Apply basic trading data
+            if (extractedData.direction) {
+                formInputs.plan.value = extractedData.direction.toUpperCase();
+            }
+
+            if (extractedData.entry_price) {
+                formInputs.entryPoint.value = extractedData.entry_price;
+                formInputs.entryType.value = 'ENTRY_LIMIT';
+                handleEntryTypeChange();
+            }
+
+            if (extractedData.stop_loss) {
+                formInputs.stopLoss.value = extractedData.stop_loss;
+            }
+
+            if (extractedData.take_profits && extractedData.take_profits.length > 0) {
+                extractedData.take_profits.forEach((tp, index) => {
+                    const tpField = `tp${index + 1}`;
+                    if (formInputs[tpField]) {
+                        formInputs[tpField].value = tp;
+                    }
+                });
+            }
+
+            // Extract and apply technical analysis data
+            const technicalAnalysis = extractTechnicalAnalysisData(extractedData);
+
+            // Update order comment with technical analysis information
+            let comment = 'PlanScan_AI';
+            if (technicalAnalysis.marketAnalysis.elliottWave) comment += '_EW';
+            if (technicalAnalysis.marketAnalysis.fibonacci) comment += '_Fib';
+            if (technicalAnalysis.marketAnalysis.trend) comment += `_${technicalAnalysis.marketAnalysis.trend}`;
+            if (extractedData.direction) comment += `_${extractedData.direction}`;
+            if (technicalAnalysis.detectedPatterns.length > 0) {
+                comment += `_${technicalAnalysis.detectedPatterns.length}Patterns`;
+            }
+
+            if (formInputs.orderComment) {
+                formInputs.orderComment.value = comment;
+            }
+
+            // Validate and update UI
+            validateForm();
+            updateRiskCalculation();
+
+            // Scroll to form
+            form.scrollIntoView({ behavior: 'smooth' });
+
+            // Show enhanced success message
+            const message = `✅ AI analysis applied successfully!\n\n` +
+                           `📊 Applied ${Object.keys(extractedData).length} parameters\n` +
+                           `🔍 Detected ${technicalAnalysis.detectedPatterns.length} technical patterns\n` +
+                           `💹 Enhanced order comment: "${comment}"\n\n` +
+                           `📋 Please review and validate before generating your trading plan.`;
+
+            alert(message);
+        }
+
+        // ==================== SYMBOL SEARCH ====================
+
+        function handleSymbolSearch() {
+            const query = tradeSymbol.value.toUpperCase().trim();
+
+            if (query === '') {
+                filteredSymbols = [...allSymbols];
+            } else {
+                // Enhanced fuzzy search
+                filteredSymbols = allSymbols.filter(symbol => {
+                    const searchStr = `${symbol.symbol} ${symbol.name} ${symbol.categoryName}`.toUpperCase();
+                    return searchStr.includes(query);
+                });
+
+                // Prioritize exact symbol matches
+                filteredSymbols.sort((a, b) => {
+                    const aExact = a.symbol === query;
+                    const bExact = b.symbol === query;
+                    if (aExact && !bExact) return -1;
+                    if (!aExact && bExact) return 1;
+                    return 0;
+                });
+            }
+
+            updateSymbolDropdown();
+        }
+
+        function updateSymbolDropdown() {
+            symbolDropdown.innerHTML = '';
+
+            if (filteredSymbols.length === 0) {
+                symbolDropdown.innerHTML = '<div class="symbol-dropdown-item">No symbols found</div>';
+                symbolDropdown.style.display = 'block';
+                return;
+            }
+
+            // Show popular symbols first when query is empty
+            const symbolsToShow = tradeSymbol.value.trim() === '' && popularSymbols.length > 0
+                ? [...popularSymbols, ...filteredSymbols.filter(s => !popularSymbols.includes(s))]
+                : filteredSymbols;
+
+            // Limit displayed results
+            const displayLimit = 50;
+            const limitedSymbols = symbolsToShow.slice(0, displayLimit);
+
+            limitedSymbols.forEach(symbol => {
+                const item = document.createElement('div');
+                item.className = 'symbol-dropdown-item';
+                item.innerHTML = `
+                    <div class="symbol-info">
+                        <span class="symbol-category-icon">${symbol.categoryIcon}</span>
+                        <div class="symbol-details">
+                            <div class="symbol-name">${symbol.symbol}</div>
+                            <div class="symbol-description">${symbol.name}</div>
+                        </div>
+                    </div>
+                `;
+
+                item.addEventListener('click', () => {
+                    tradeSymbol.value = symbol.symbol;
+                    hideSymbolDropdown();
+                    validateSymbol();
+                    validateBrokerCompliance(symbol.symbol);
+                });
+
+                symbolDropdown.appendChild(item);
+            });
+
+            symbolDropdown.style.display = 'block';
+
+            // Show count if more results available
+            if (symbolsToShow.length > displayLimit) {
+                const moreItem = document.createElement('div');
+                moreItem.className = 'symbol-dropdown-item';
+                moreItem.style.fontStyle = 'italic';
+                moreItem.textContent = `... and ${symbolsToShow.length - displayLimit} more`;
+                symbolDropdown.appendChild(moreItem);
+            }
+        }
+
+        function showSymbolDropdown() {
+            handleSymbolSearch();
+        }
+
+        function hideSymbolDropdown() {
+            setTimeout(() => {
+                symbolDropdown.style.display = 'none';
+            }, 200);
+        }
+
+        // ==================== ENHANCED VALIDATION SYSTEM ====================
+
+        function validateForm() {
+            let isValid = true;
+            const values = getFormValues();
+            const validationSummaryItems = [];
+
+            // Validate symbol
+            const symbolResult = validateSymbol();
+            if (!symbolResult.valid) isValid = false;
+            if (symbolResult.message) {
+                validationSummaryItems.push({
+                    type: symbolResult.type,
+                    message: symbolResult.message
+                });
+            }
+
+            // Validate plan/direction (required)
+            if (!values.plan) {
+                showValidation('plan', 'error', 'Direction is required', brokerData.errorCodes.SYMBOL_NOT_FOUND);
+                isValid = false;
+                validationSummaryItems.push({
+                    type: 'error',
+                    message: 'Direction is required',
+                    code: 'E001'
+                });
+            } else {
+                hideValidation('plan');
+            }
+
+            // Validate risk percent with enhanced checks
+            const riskResult = validateRiskPercent(values.riskPercent);
+            if (!riskResult.valid) {
+                showValidation('riskPercent', riskResult.type, riskResult.message, riskResult.code);
+                isValid = false;
+                validationSummaryItems.push(riskResult);
+            } else {
+                hideValidation('riskPercent');
+            }
+
+            // Validate stop loss (required if using risk percent)
+            if (values.totalVolume === 0 && !values.stopLoss) {
+                showValidation('stopLoss', 'error', 'Stop loss is required when using risk percent');
+                isValid = false;
+                validationSummaryItems.push({
+                    type: 'error',
+                    message: 'Stop loss required for risk calculation'
+                });
+            } else {
+                hideValidation('stopLoss');
+            }
+
+            // Validate entry point with enhanced validation
+            const entryResult = validateEntryPoint(values);
+            if (!entryResult.valid) isValid = false;
+            if (entryResult.messages) {
+                validationSummaryItems.push(...entryResult.messages);
+            }
+
+            // Validate price levels with enhanced logic
+            const priceResult = validatePriceLevels(values);
+            if (!priceResult.valid) isValid = false;
+            if (priceResult.messages) {
+                validationSummaryItems.push(...priceResult.messages);
+            }
+
+            // Validate take profits sequence
+            const tpResult = validateTakeProfits(values);
+            if (!tpResult.valid) isValid = false;
+            if (tpResult.messages) {
+                validationSummaryItems.push(...tpResult.messages);
+            }
+
+            // Validate broker compliance (new v1.3 feature)
+            const brokerResult = validateBrokerCompliance(values.tradeSymbol);
+            if (!brokerResult.valid) {
+                isValid = false;
+                validationSummaryItems.push(...brokerResult.messages);
+            }
+
+            // EA-specific validation for complete compatibility
+            const eaCompatibilityResult = validateEACompatibility(values);
+            if (!eaCompatibilityResult.valid) isValid = false;
+            if (eaCompatibilityResult.messages) {
+                validationSummaryItems.push(...eaCompatibilityResult.messages);
+            }
+
+            // EA field requirements validation
+            const eaFieldResult = validateEAFieldRequirements(values);
+            if (!eaFieldResult.valid) isValid = false;
+            if (eaFieldResult.messages) {
+                validationSummaryItems.push(...eaFieldResult.messages);
+            }
+
+            // EA trade setup validation
+            const eaTradeResult = validateEATradeSetup(values);
+            if (!eaTradeResult.valid) isValid = false;
+            if (eaTradeResult.messages) {
+                validationSummaryItems.push(...eaTradeResult.messages);
+            }
+
+            // Update risk calculation with enhanced data
+            updateRiskCalculation(values);
+
+            // Update validation status
+            updateValidationStatus(isValid);
+
+            // Update validation summary
+            updateValidationSummary(validationSummaryItems);
+
+            // Store validation results
+            validationResults = {
+                symbol: symbolResult,
+                priceLevels: priceResult,
+                riskManagement: riskResult,
+                brokerCompliance: brokerResult,
+                eaCompatibility: eaCompatibilityResult,
+                eaFieldRequirements: eaFieldResult,
+                eaTradeSetup: eaTradeResult,
+                overall: isValid
+            };
+
+            return isValid;
+        }
+
+        function validateSymbol() {
+            const symbol = tradeSymbol.value.toUpperCase().trim();
+
+            if (symbol === '') {
+                showValidation('tradeSymbol', 'error', 'Symbol is required', brokerData.errorCodes.SYMBOL_NOT_FOUND);
+                return { valid: false, type: 'error', message: 'Symbol required' };
+            }
+
+            if (symbol === 'CURRENT' || symbol === 'CURRENT CHART SYMBOL') {
+                showValidation('tradeSymbol', 'success', 'Using current chart symbol ✅');
+                return { valid: true, type: 'success', message: 'Current chart symbol' };
+            }
+
+            // Check if symbol exists in symbols.md (EA compatibility list) - case insensitive
+            const symbolInMd = symbolsMdData.some(s => s.toUpperCase() === symbol);
+            const symbolExists = allSymbols.some(s => s.symbol.toUpperCase() === symbol);
+
+            if (symbolInMd) {
+                // Symbol exists in symbols.md - this is the primary validation for EA compatibility
+                if (symbolExists) {
+                    // Symbol exists in symbols.md and is loaded in the system
+                    const symbolInfo = allSymbols.find(s => s.symbol.toUpperCase() === symbol);
+                    const message = `✅ Valid symbol: ${symbolInfo.name} (${symbolInfo.categoryName})`;
+                    showValidation('tradeSymbol', 'success', message);
+                    return { valid: true, type: 'success', message: message };
+                } else {
+                    // Symbol exists in symbols.md but not in the current session data
+                    const message = `✅ EA Compatible Symbol: ${symbol} (validated with symbols.md)`;
+                    showValidation('tradeSymbol', 'success', message);
+                    return { valid: true, type: 'success', message: message };
+                }
+            } else if (symbolExists) {
+                // Symbol exists in current session data but not in symbols.md
+                const symbolInfo = allSymbols.find(s => s.symbol.toUpperCase() === symbol);
+                const message = `⚠️ Symbol found in database but not in EA compatibility list: ${symbolInfo.name} (${symbolInfo.categoryName})`;
+                showValidation('tradeSymbol', 'warning', message);
+                return { valid: true, type: 'warning', message: message };
+            } else {
+                // Symbol not found in either file
+                const message = `❌ Symbol not found in EA compatibility list or database: ${symbol}`;
+                showValidation('tradeSymbol', 'error', message, brokerData.errorCodes.SYMBOL_NOT_FOUND);
+                return { valid: false, type: 'error', message: message };
+            }
+        }
+
+        function validateRiskPercent(riskPercent) {
+            const minRisk = brokerData.validationRules.riskPercent.min;
+            const maxRisk = brokerData.validationRules.riskPercent.max;
+
+            // Check if risk percent is empty or zero
+            if (!riskPercent || riskPercent === 0) {
+                return {
+                    valid: false,
+                    type: 'error',
+                    message: 'Risk percent is required and must be greater than 0',
+                    code: brokerData.errorCodes.RISK_PERCENT_INVALID
+                };
+            }
+
+            // Check if risk percent is a valid number
+            if (isNaN(riskPercent)) {
+                return {
+                    valid: false,
+                    type: 'error',
+                    message: 'Risk percent must be a valid number',
+                    code: brokerData.errorCodes.RISK_PERCENT_INVALID
+                };
+            }
+
+            // Check if risk percent is within valid range
+            if (riskPercent < minRisk || riskPercent > maxRisk) {
+                return {
+                    valid: false,
+                    type: 'error',
+                    message: `Risk percent must be between ${minRisk}% and ${maxRisk}%`,
+                    code: brokerData.errorCodes.RISK_PERCENT_INVALID
+                };
+            }
+
+            return {
+                valid: true,
+                type: 'success',
+                message: `Risk percent acceptable: ${riskPercent}%`
+            };
+        }
+
+        // ==================== EA-SPECIFIC VALIDATION FUNCTIONS ====================
+
+        function validateEACompatibility(values) {
+            const messages = [];
+            let isValid = true;
+
+            // EA-specific validation: Risk percent must be >= 0.1%
+            if (values.riskPercent && parseFloat(values.riskPercent) < 0.1) {
+                messages.push({
+                    type: 'error',
+                    message: 'EA requires risk percent >= 0.1%',
+                    code: brokerData.errorCodes.RISK_PERCENT_INVALID
+                });
+                isValid = false;
+            }
+
+            // EA-specific validation: Stop Loss required when using Risk Percent mode
+            if (values.riskPercent && parseFloat(values.riskPercent) > 0 && (!values.stopLoss || values.stopLoss === '0')) {
+                if (!values.totalVolume || values.totalVolume === '0') {
+                    messages.push({
+                        type: 'error',
+                        message: 'EA requires Stop Loss when using Risk Percent mode (Volume = 0)',
+                        code: brokerData.errorCodes.EA_STOP_LOSS_REQUIRED
+                    });
+                    isValid = false;
+                }
+            }
+
+            // EA-specific validation: Entry Point required for Limit orders
+            if (values.entryType === 'ENTRY_LIMIT' && (!values.entryPoint || values.entryPoint === '0')) {
+                messages.push({
+                    type: 'error',
+                    message: 'EA requires Entry Point for Limit orders',
+                    code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                });
+                isValid = false;
+            }
+
+            // EA-specific validation: Total Volume validation
+            if (values.totalVolume && parseFloat(values.totalVolume) > 0) {
+                const volume = parseFloat(values.totalVolume);
+                const minVolume = 0.01; // EA minimum volume
+
+                if (volume < minVolume) {
+                    messages.push({
+                        type: 'error',
+                        message: `EA requires Total Volume >= ${minVolume}`,
+                        code: brokerData.errorCodes.EA_MIN_VOLUME_INVALID
+                    });
+                    isValid = false;
+                }
+            }
+
+            // EA-specific validation: Price relationships for Stop Loss
+            if (values.stopLoss && values.stopLoss !== '0' && values.plan) {
+                const sl = parseFloat(values.stopLoss);
+                const plan = values.plan.toUpperCase();
+                let entryPrice = null;
+
+                // Determine entry price based on entry type
+                if (values.entryType === 'ENTRY_MARKET') {
+                    // For market orders, we'll validate based on plan direction
+                    // This will be checked against current market price in EA
+                    entryPrice = null; // EA will validate this
+                } else if (values.entryPoint && values.entryPoint !== '0') {
+                    entryPrice = parseFloat(values.entryPoint);
+                }
+
+                if (entryPrice !== null) {
+                    if (plan === 'LONG' && sl >= entryPrice) {
+                        messages.push({
+                            type: 'error',
+                            message: 'EA requires Stop Loss below entry price for LONG positions',
+                            code: brokerData.errorCodes.EA_LONG_STOP_LOSS_INVALID
+                        });
+                        isValid = false;
+                    }
+                    if (plan === 'SHORT' && sl <= entryPrice) {
+                        messages.push({
+                            type: 'error',
+                            message: 'EA requires Stop Loss above entry price for SHORT positions',
+                            code: brokerData.errorCodes.EA_SHORT_STOP_LOSS_INVALID
+                        });
+                        isValid = false;
+                    }
+                }
+            }
+
+            // EA-specific validation: Breakout Limit price relationships
+            if (values.entryType === 'ENTRY_LIMIT' && values.limitBehavior === 'LIMIT_BREAKOUT' && values.entryPoint && values.entryPoint !== '0') {
+                const entryPoint = parseFloat(values.entryPoint);
+                const plan = values.plan.toUpperCase();
+
+                // Note: EA validates this against current market prices
+                // We'll add a warning to ensure user checks current market conditions
+                messages.push({
+                    type: 'warning',
+                    message: 'EA will validate Breakout Limit prices against current market: LONG must be above Ask, SHORT must be below Bid',
+                    code: brokerData.errorCodes.EA_BREAKOUT_LIMIT_WARNING
+                });
+            }
+
+            // EA-specific validation: Take Profit sequence
+            const tpLevels = [values.tp1, values.tp2, values.tp3, values.tp4, values.tp5].filter(tp => tp && tp !== '0');
+            if (tpLevels.length > 1) {
+                for (let i = 0; i < tpLevels.length - 1; i++) {
+                    const current = parseFloat(tpLevels[i]);
+                    const next = parseFloat(tpLevels[i + 1]);
+
+                    if (values.plan === 'LONG' && current >= next) {
+                        messages.push({
+                            type: 'error',
+                            message: `EA requires TP${i + 1} < TP${i + 2} for LONG positions`,
+                            code: brokerData.errorCodes.EA_LONG_TP_SEQUENCE_INVALID
+                        });
+                        isValid = false;
+                    }
+                    if (values.plan === 'SHORT' && current <= next) {
+                        messages.push({
+                            type: 'error',
+                            message: `EA requires TP${i + 1} > TP${i + 2} for SHORT positions`,
+                            code: brokerData.errorCodes.EA_SHORT_TP_SEQUENCE_INVALID
+                        });
+                        isValid = false;
+                    }
+                }
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateEAFieldRequirements(values) {
+            const messages = [];
+            let isValid = true;
+
+            // Check required fields for EA compatibility
+            const requiredFields = [
+                'tradeSymbol', 'plan', 'entryType', 'stopLoss',
+                'riskPercent', 'slippage', 'orderComment'
+            ];
+
+            for (const field of requiredFields) {
+                if (!values[field] || values[field] === '' || values[field] === '0') {
+                    messages.push({
+                        type: 'error',
+                        message: `EA requires ${field} to be set`,
+                        code: brokerData.errorCodes.EA_MISSING_REQUIRED_FIELD
+                    });
+                    isValid = false;
+                }
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateEATradeSetup(values) {
+            const messages = [];
+            let isValid = true;
+
+            // EA-specific trade setup validation
+            if (!values.plan) {
+                messages.push({
+                    type: 'error',
+                    message: 'EA requires trading plan direction (LONG/SHORT)',
+                    code: brokerData.errorCodes.EA_MISSING_PLAN_DIRECTION
+                });
+                isValid = false;
+            }
+
+            if (!values.entryType) {
+                messages.push({
+                    type: 'error',
+                    message: 'EA requires entry type (MARKET/LIMIT)',
+                    code: brokerData.errorCodes.EA_MISSING_ENTRY_TYPE
+                });
+                isValid = false;
+            }
+
+            if (values.entryType === 'ENTRY_LIMIT' && !values.limitBehavior) {
+                messages.push({
+                    type: 'error',
+                    message: 'EA requires limit behavior for LIMIT orders',
+                    code: brokerData.errorCodes.EA_MISSING_LIMIT_BEHAVIOR
+                });
+                isValid = false;
+            }
+
+            // Validate order comment format
+            if (values.orderComment && values.orderComment.length > 30) {
+                messages.push({
+                    type: 'warning',
+                    code: brokerData.errorCodes.EA_ORDER_COMMENT_TOO_LONG
+                });
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validatePriceLevels(values) {
+            const messages = [];
+            let isValid = true;
+
+            // If both entry point and stop loss are provided, validate their relationship
+            if (values.entryPoint && values.stopLoss && values.entryPoint !== '0' && values.stopLoss !== '0') {
+                const entry = parseFloat(values.entryPoint);
+                const sl = parseFloat(values.stopLoss);
+
+                // Validate that both are valid numbers
+                if (isNaN(entry) || isNaN(sl)) {
+                    messages.push({
+                        type: 'error',
+                        message: 'Invalid price format for entry or stop loss',
+                        code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                    });
+                    isValid = false;
+                    return { valid: isValid, messages: messages };
+                }
+
+                // Validate that prices are positive
+                if (entry <= 0 || sl <= 0) {
+                    messages.push({
+                        type: 'error',
+                        message: 'Prices must be positive numbers',
+                        code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                    });
+                    isValid = false;
+                    return { valid: isValid, messages: messages };
+                }
+
+                // Validate price relationship based on direction
+                if (values.plan === 'LONG') {
+                    if (sl >= entry) {
+                        showValidation('stopLoss', 'error', 'Stop Loss for LONG must be below entry price', brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                        messages.push({
+                            type: 'error',
+                            message: 'Invalid LONG: SL must be < Entry',
+                            code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                        });
+                        isValid = false;
+                    } else {
+                        const distance = entry - sl;
+                        showValidation('stopLoss', 'success', `✅ Valid LONG setup. Distance: ${formatNumber(distance)}`);
+                    }
+                } else if (values.plan === 'SHORT') {
+                    if (sl <= entry) {
+                        showValidation('stopLoss', 'error', 'Stop Loss for SHORT must be above entry price', brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                        messages.push({
+                            type: 'error',
+                            message: 'Invalid SHORT: SL must be > Entry',
+                            code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                        });
+                        isValid = false;
+                    } else {
+                        const distance = sl - entry;
+                        showValidation('stopLoss', 'success', `✅ Valid SHORT setup. Distance: ${formatNumber(distance)}`);
+                    }
+                }
+
+                // Additional validation: ensure entry and SL are not equal (zero risk)
+                if (entry === sl) {
+                    messages.push({
+                        type: 'error',
+                        message: 'Entry price and stop loss cannot be equal (zero risk)',
+                        code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                    });
+                    isValid = false;
+                }
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateEntryPoint(values) {
+            const messages = [];
+            let isValid = true;
+
+            // Entry point validation (required for LIMIT orders)
+            if (values.entryType === 'ENTRY_LIMIT') {
+                if (!values.entryPoint || values.entryPoint === '0' || (typeof values.entryPoint === 'string' && values.entryPoint.trim() === '')) {
+                    showValidation('entryPoint', 'error', 'Entry point is required for LIMIT orders', brokerData.errorCodes.INVALID_ENTRY_POINT);
+                    messages.push({
+                        type: 'error',
+                        message: 'Entry point required for limit orders',
+                        code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                    });
+                    isValid = false;
+                } else {
+                    const entry = parseFloat(values.entryPoint);
+
+                    // Basic format validation
+                    if (isNaN(entry)) {
+                        showValidation('entryPoint', 'error', 'Entry point must be a valid number', brokerData.errorCodes.INVALID_ENTRY_POINT);
+                        messages.push({
+                            type: 'error',
+                            message: 'Invalid entry point format - must be numeric',
+                            code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                        });
+                        isValid = false;
+                    } else if (entry <= 0) {
+                        showValidation('entryPoint', 'error', 'Entry point must be greater than 0', brokerData.errorCodes.INVALID_ENTRY_POINT);
+                        messages.push({
+                            type: 'error',
+                            message: 'Entry point must be positive',
+                            code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                        });
+                        isValid = false;
+                    } else {
+                        showValidation('entryPoint', 'success', '✅ Entry point format valid');
+                    }
+                }
+            } else if (values.entryType === 'ENTRY_MARKET') {
+                // For market orders, entry point is optional but if provided, validate format
+                if (values.entryPoint && values.entryPoint !== '0' && (typeof values.entryPoint === 'string' ? values.entryPoint.trim() !== '' : true)) {
+                    const entry = parseFloat(values.entryPoint);
+                    if (isNaN(entry)) {
+                        showValidation('entryPoint', 'error', 'Entry point must be a valid number', brokerData.errorCodes.INVALID_ENTRY_POINT);
+                        messages.push({
+                            type: 'error',
+                            message: 'Invalid entry point format - must be numeric',
+                            code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                        });
+                        isValid = false;
+                    } else if (entry <= 0) {
+                        showValidation('entryPoint', 'error', 'Entry point must be greater than 0', brokerData.errorCodes.INVALID_ENTRY_POINT);
+                        messages.push({
+                            type: 'error',
+                            message: 'Entry point must be positive',
+                            code: brokerData.errorCodes.INVALID_ENTRY_POINT
+                        });
+                        isValid = false;
+                    } else {
+                        showValidation('entryPoint', 'success', '✅ Entry point format valid (optional for market orders)');
+                    }
+                } else {
+                    hideValidation('entryPoint');
+                }
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateTakeProfits(values) {
+            const messages = [];
+            let isValid = true;
+            const tpLevels = [values.tp1, values.tp2, values.tp3, values.tp4, values.tp5];
+
+            // Get entry price - use entry point if provided, otherwise we'll validate sequence between TPs only
+            let entry;
+            let hasValidEntry = false;
+
+            if (values.entryPoint && values.entryPoint !== '0' && (typeof values.entryPoint === 'string' ? values.entryPoint.trim() !== '' : true)) {
+                entry = parseFloat(values.entryPoint);
+                if (!isNaN(entry) && entry > 0) {
+                    hasValidEntry = true;
+                }
+            }
+
+            // For market orders without entry point, we'll validate TP sequence relative to each other
+            // Note: Market price validation will be added in future phase when UI has real-time market data
+            let lastLevel = hasValidEntry ? entry : null;
+
+            for (let i = 0; i < tpLevels.length; i++) {
+                const fieldName = `tp${i + 1}`;
+                const tpValue = tpLevels[i];
+
+                // Skip empty TP fields
+                if (!tpValue || tpValue === '0' || (typeof tpValue === 'string' && tpValue.trim() === '')) {
+                    hideValidation(fieldName);
+                    continue;
+                }
+
+                const tp = parseFloat(tpValue);
+
+                // Validate that TP is a valid number
+                if (isNaN(tp)) {
+                    showValidation(fieldName, 'error', `TP${i + 1} must be a valid number`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                    messages.push({
+                        type: 'error',
+                        message: `TP${i + 1} must be a valid number`,
+                        code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                    });
+                    isValid = false;
+                    continue;
+                }
+
+                // Validate that TP is positive
+                if (tp <= 0) {
+                    showValidation(fieldName, 'error', `TP${i + 1} must be greater than 0`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                    messages.push({
+                        type: 'error',
+                        message: `TP${i + 1} must be positive`,
+                        code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                    });
+                    isValid = false;
+                    continue;
+                }
+
+                // If we have a valid entry point and direction, validate TP sequence
+                if (hasValidEntry && values.plan) {
+                    if (values.plan === 'LONG') {
+                        // For LONG positions, TP must be above entry price
+                        if (tp <= entry) {
+                            showValidation(fieldName, 'error', `TP${i + 1} must be above entry price for LONG`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                            messages.push({
+                                type: 'error',
+                                message: `TP${i + 1} must be above entry price`,
+                                code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                            });
+                            isValid = false;
+                        } else if (lastLevel !== null && tp <= lastLevel) {
+                            // TP must be in ascending order for LONG
+                            showValidation(fieldName, 'error', `TP${i + 1} must be above previous TP`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                            messages.push({
+                                type: 'error',
+                                message: `TP${i + 1} sequence error`,
+                                code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                            });
+                            isValid = false;
+                        } else {
+                            hideValidation(fieldName);
+                        }
+                    } else if (values.plan === 'SHORT') {
+                        // For SHORT positions, TP must be below entry price
+                        if (tp >= entry) {
+                            showValidation(fieldName, 'error', `TP${i + 1} must be below entry price for SHORT`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                            messages.push({
+                                type: 'error',
+                                message: `TP${i + 1} must be below entry price`,
+                                code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                            });
+                            isValid = false;
+                        } else if (lastLevel !== null && tp >= lastLevel) {
+                            // TP must be in descending order for SHORT
+                            showValidation(fieldName, 'error', `TP${i + 1} must be below previous TP`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                            messages.push({
+                                type: 'error',
+                                message: `TP${i + 1} sequence error`,
+                                code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                            });
+                            isValid = false;
+                        } else {
+                            hideValidation(fieldName);
+                        }
+                    }
+                } else {
+                    // If no valid entry point, just validate TP sequence relative to each other
+                    if (i > 0 && lastLevel !== null) {
+                        const prevTp = parseFloat(tpLevels[i - 1]);
+                        if (!isNaN(prevTp)) {
+                            if (values.plan === 'LONG' && tp <= prevTp) {
+                                showValidation(fieldName, 'error', `TP${i + 1} must be above TP${i}`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                                messages.push({
+                                    type: 'error',
+                                    message: `TP${i + 1} sequence error`,
+                                    code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                                });
+                                isValid = false;
+                            } else if (values.plan === 'SHORT' && tp >= prevTp) {
+                                showValidation(fieldName, 'error', `TP${i + 1} must be below TP${i}`, brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP);
+                                messages.push({
+                                    type: 'error',
+                                    message: `TP${i + 1} sequence error`,
+                                    code: brokerData.errorCodes.INVALID_PRICE_RELATIONSHIP
+                                });
+                                isValid = false;
+                            } else {
+                                hideValidation(fieldName);
+                            }
+                        } else {
+                            hideValidation(fieldName);
+                        }
+                    } else {
+                        hideValidation(fieldName);
+                    }
+                }
+
+                lastLevel = tp;
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateBrokerCompliance(symbol) {
+            const messages = [];
+            let isValid = true;
+
+            if (!symbol || symbol === 'CURRENT') {
+                return { valid: true, messages: [] };
+            }
+
+            // Find symbol in database
+            const symbolInfo = allSymbols.find(s => s.symbol === symbol.toUpperCase());
+            if (!symbolInfo) {
+                return { valid: true, messages: [] }; // Allow custom symbols
+            }
+
+            // Get broker requirements from symbol data
+            const brokerReqs = symbolInfo.fullInfo;
+            if (!brokerReqs) {
+                return { valid: true, messages: [] };
+            }
+
+            // Display broker information
+            displayBrokerInfo(symbolInfo);
+
+            // Validate lot size requirements
+            const lotSizeValidation = validateLotSizeRequirements(brokerReqs);
+            if (!lotSizeValidation.valid) {
+                messages.push(lotSizeValidation);
+                isValid = false;
+            }
+
+            // Validate price precision
+            const precisionValidation = validatePricePrecision(brokerReqs);
+            if (!precisionValidation.valid) {
+                messages.push(precisionValidation);
+                isValid = false;
+            }
+
+            return { valid: isValid, messages: messages };
+        }
+
+        function validateLotSizeRequirements(brokerReqs) {
+            const minLot = brokerReqs.minLot || 0.01;
+            const maxLot = brokerReqs.maxLot || 100;
+            const lotStep = brokerReqs.lotStep || 0.01;
+
+            // Store for validation
+            brokerData.currentSymbol = {
+                minLot: minLot,
+                maxLot: maxLot,
+                lotStep: lotStep
+            };
+
+            return {
+                valid: true,
+                type: 'broker',
+                message: `🏦 Broker limits: Min ${minLot}, Max ${maxLot}, Step ${lotStep}`,
+                code: brokerData.errorCodes.VALIDATION_SUCCESS
+            };
+        }
+
+        function validatePricePrecision(brokerReqs) {
+            const digits = brokerReqs.digits || 5;
+            const tickSize = brokerReqs.tickSize || 0.00001;
+
+            // Store for price normalization
+            brokerData.priceInfo = {
+                digits: digits,
+                tickSize: tickSize
+            };
+
+            return {
+                valid: true,
+                type: 'broker',
+                message: `🏦 Price precision: ${digits} digits, Tick size: ${tickSize}`,
+                code: brokerData.errorCodes.VALIDATION_SUCCESS
+            };
+        }
+
+        function validateField(fieldName) {
+            const value = formInputs[fieldName].value;
+
+            switch (fieldName) {
+                case 'riskPercent':
+                    const riskResult = validateRiskPercent(parseFloat(value) || 0);
+                    if (!riskResult.valid) {
+                        showValidation(fieldName, riskResult.type, riskResult.message, riskResult.code);
+                    } else {
+                        hideValidation(fieldName);
+                    }
+                    break;
+
+                case 'totalVolume':
+                    if (parseFloat(value) < 0) {
+                        showValidation(fieldName, 'error', 'Volume cannot be negative', brokerData.errorCodes.LOT_SIZE_INVALID);
+                    } else {
+                        hideValidation(fieldName);
+                    }
+                    break;
+
+                case 'stopLoss':
+                    if (!value && formInputs.totalVolume.value === '0') {
+                        showValidation(fieldName, 'error', 'Stop loss required for risk calculation');
+                    } else {
+                        hideValidation(fieldName);
+                    }
+                    break;
+            }
+        }
+
+        function validatePriceField(fieldName) {
+            const value = parseFloat(formInputs[fieldName].value) || 0;
+
+            if (value <= 0) {
+                hideValidation(fieldName);
+                return;
+            }
+
+            // Apply price normalization if broker data available
+            if (brokerData.priceInfo) {
+                const normalizedValue = normalizePriceForBroker(value);
+                if (Math.abs(value - normalizedValue) > brokerData.priceInfo.tickSize) {
+                    showValidation(fieldName, 'warning', `Price will be normalized to ${formatNumber(normalizedValue)}`);
+                    formInputs[fieldName].value = normalizedValue;
+                } else {
+                    hideValidation(fieldName);
+                }
+            }
+        }
+
+        function normalizePriceForBroker(price) {
+            if (!brokerData.priceInfo) return price;
+
+            const { tickSize, digits } = brokerData.priceInfo;
+            if (tickSize > 0) {
+                // Round to nearest tick
+                const normalizedPrice = Math.round(price / tickSize) * tickSize;
+                return parseFloat(normalizedPrice.toFixed(digits));
+            }
+
+            return parseFloat(price.toFixed(digits));
+        }
+
+        function displayBrokerInfo(symbolInfo) {
+            if (!symbolInfo.fullInfo) return;
+
+            const brokerReqs = symbolInfo.fullInfo;
+            const details = `
+Symbol: ${symbolInfo.symbol}
+Category: ${symbolInfo.categoryName}
+Digits: ${brokerReqs.digits || 'N/A'}
+Tick Size: ${brokerReqs.tickSize || 'N/A'}
+Min Lot: ${brokerReqs.minLot || 'N/A'}
+Max Lot: ${brokerReqs.maxLot || 'N/A'}
+Lot Step: ${brokerReqs.lotStep || 'N/A'}
+Spread: ${brokerReqs.spread || 'N/A'}
+Stop Level: ${brokerReqs.stopLevel || 'N/A'}
+            `;
+
+            brokerDetails.textContent = details;
+            brokerInfo.style.display = 'block';
+        }
+
+        function updateRiskCalculation(values = null) {
+            if (!values) values = getFormValues();
+
+            if (values.totalVolume > 0) {
+                riskCalculation.innerHTML = `💰 Fixed Volume Mode: ${values.totalVolume} lots`;
+                return;
+            }
+
+            if (!values.entryPoint || !values.stopLoss || !values.riskPercent) {
+                riskCalculation.innerHTML = '💰 Enter values to see risk calculation';
+                return;
+            }
+
+            const entry = parseFloat(values.entryPoint);
+            const sl = parseFloat(values.stopLoss);
+            const riskPercent = parseFloat(values.riskPercent);
+
+            const riskDistance = Math.abs(entry - sl);
+            const accountSize = 10000; // Assumed account size
+            const riskAmount = accountSize * (riskPercent / 100);
+
+            // Enhanced risk calculation with broker data
+            let riskDetails = `
+Risk Distance: ${formatNumber(riskDistance)}
+Account Size: $${accountSize.toLocaleString()}
+Risk Amount: $${riskAmount.toFixed(2)} (${riskPercent}%)
+            `;
+
+            // Add broker-specific calculation if available
+            if (brokerData.currentSymbol) {
+                const estimatedLots = riskAmount / (riskDistance * 100000); // Rough estimate
+                riskDetails += `
+Estimated Lots: ${estimatedLots.toFixed(2)}
+Broker Min Lot: ${brokerData.currentSymbol.minLot}
+                `;
+            }
+
+            riskCalculation.innerHTML = riskDetails;
+        }
+
+        function updateValidationSummary(items) {
+            // Filter out items with undefined or empty messages
+            const validItems = items.filter(item =>
+                item.message && item.message !== 'undefined' && item.message.trim() !== ''
+            );
+
+            if (validItems.length === 0) {
+                validationSummary.style.display = 'none';
+                return;
+            }
+
+            validationList.innerHTML = '';
+            validItems.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="validation-icon">${getValidationIcon(item.type)}</span>
+                    <span>${item.message}</span>
+                    ${item.code ? `<small style="color: #666;">[${item.code}]</small>` : ''}
+                `;
+                validationList.appendChild(li);
+            });
+
+            validationSummary.style.display = 'block';
+        }
+
+        function showValidation(fieldId, type, message, code = null) {
+            const validationEl = document.getElementById(`${fieldId}-validation`);
+            const inputEl = document.getElementById(fieldId);
+
+            if (validationEl) {
+                validationEl.className = `validation-message show ${type}`;
+                // Handle undefined or empty messages
+                if (!message || message === 'undefined' || message.trim() === '') {
+                    validationEl.style.display = 'none';
+                } else {
+                    validationEl.textContent = message;
+                    if (code) {
+                        validationEl.textContent += ` [${code}]`;
+                    }
+                    validationEl.style.display = 'block';
+                }
+            }
+
+            if (inputEl) {
+                inputEl.className = `form-input ${type}`;
+            }
+        }
+
+        function hideValidation(fieldId) {
+            const validationEl = document.getElementById(`${fieldId}-validation`);
+            const inputEl = document.getElementById(fieldId);
+
+            if (validationEl) {
+                validationEl.className = 'validation-message';
+                validationEl.textContent = '';
+            }
+
+            if (inputEl) {
+                inputEl.className = 'form-input';
+            }
+        }
+
+        function updateValidationStatus(isValid) {
+            if (isValid) {
+                validationStatus.className = 'status-indicator status-valid';
+                validationStatus.innerHTML = '✅ All validations passed';
+                exportBtn.disabled = false;
+                updateSetFileDisplay(); // Show .set file info when validation passes
+            } else {
+                validationStatus.className = 'status-indicator status-invalid';
+                validationStatus.innerHTML = '❌ Please fix validation errors';
+                exportBtn.disabled = true;
+            }
+        }
+
+        function updateSetFileDisplay() {
+            const values = getFormValues();
+
+            // Generate the actual filename
+            const now = new Date();
+            const year = now.getFullYear().toString().slice(2);
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+
+            const directionCode = values.plan === 'LONG' ? 'L' : 'S';
+            const entryTypeCode = values.entryType === 'ENTRY_LIMIT' ? 'L' : 'M';
+            const behaviorCode = values.limitBehavior === 'LIMIT_STANDARD' ? 'S' : 'B';
+
+            const fileName = `${values.tradeSymbol}${directionCode}${entryTypeCode}${behaviorCode}${year}${month}${day}${hours}${minutes}.set`;
+
+            // Update order comment with filename and UI version
+            formInputs.orderComment.value = `${fileName.replace('.set', '')} - PlanScan v3.0`;
+
+            const setContent = generateSetFileContent(values, fileName);
+
+            // Show the .set file information
+            aiResults.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; line-height: 1.4;">${setContent}</pre>`;
+            aiAnalysis.style.display = 'block';
+        }
+
+        function validatePriceRelationships() {
+            const values = getFormValues();
+            validatePriceLevels(values);
+            validateTakeProfits(values);
+        }
+
+        function getFormValues() {
+            const values = {};
+            Object.entries(formInputs).forEach(([key, element]) => {
+                values[key] = element.value;
+            });
+
+            // Convert numeric values with enhanced precision
+            ['entryPoint', 'stopLoss', 'totalVolume', 'riskPercent', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'slippage'].forEach(key => {
+                values[key] = parseFloat(values[key]) || 0;
+            });
+
+            return values;
+        }
+
+        // ==================== FORM HANDLERS ====================
+
+        function handleEntryTypeChange() {
+            const entryType = formInputs.entryType.value;
+            const entryPointGroup = document.getElementById('entryPointGroup');
+            const limitBehaviorGroup = document.getElementById('limitBehaviorGroup');
+
+            if (entryType === 'ENTRY_LIMIT') {
+                entryPointGroup.style.display = 'block';
+                limitBehaviorGroup.style.display = 'block';
+            } else {
+                entryPointGroup.style.display = 'none';
+                limitBehaviorGroup.style.display = 'none';
+                formInputs.entryPoint.value = '';
+            }
+
+            validateForm();
+        }
+
+        function validateAndGenerateJSON() {
+            if (validateForm()) {
+                // Show success message with validation code
+                const successCode = brokerData.errorCodes.VALIDATION_SUCCESS;
+                alert(`✅ Plan validated successfully! [${successCode}] Ready for .set export.`);
+
+                // Scroll to .set file information
+                aiAnalysis.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert('❌ Please fix validation errors before validation.');
+            }
+        }
+
+        function generateTradingPlanJSON() {
+            const values = getFormValues();
+
+            return {
+                version: "1.3",
+                timestamp: new Date().toISOString(),
+                validation_results: validationResults,
+                trading_plan: {
+                    symbol: values.tradeSymbol,
+                    direction: values.plan,
+                    entry_type: values.entryType,
+                    limit_behavior: values.limitBehavior,
+                    entry_price: values.entryPoint || null,
+                    stop_loss: values.stopLoss,
+                    take_profits: [
+                        values.tp1 || null,
+                        values.tp2 || null,
+                        values.tp3 || null,
+                        values.tp4 || null,
+                        values.tp5 || null
+                    ].filter(tp => tp !== null),
+                    risk_management: {
+                        fixed_volume: values.totalVolume,
+                        risk_percent: values.riskPercent
+                    },
+                    settings: {
+                        slippage: values.slippage,
+                        comment: values.orderComment
+                    }
+                },
+                broker_compliance: {
+                    symbol_requirements: brokerData.currentSymbol || null,
+                    price_precision: brokerData.priceInfo || null,
+                    validation_passed: validationResults.brokerCompliance?.valid || false
+                },
+                metadata: {
+                    created_with: "PlanScan v3.0",
+                    ai_analysis: extractedData ? "AI Analysis" : "Manual Entry",
+                    validation_codes: Object.values(brokerData.errorCodes).filter(code => code !== 'S001')
+                }
+            };
+        }
+
+        function exportJSON() {
+            if (!validateForm()) {
+                alert('Please fix validation errors before exporting.');
+                return;
+            }
+
+            const values = getFormValues();
+            generateAndDownloadSetFile(values);
+        }
+
+        function generateAndDownloadSetFile(values) {
+            // Generate filename with enhanced format
+            const now = new Date();
+            const year = now.getFullYear().toString().slice(2);
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+
+            const directionCode = values.plan === 'LONG' ? 'L' : 'S';
+            const entryTypeCode = values.entryType === 'ENTRY_LIMIT' ? 'L' : 'M';
+            const behaviorCode = values.limitBehavior === 'LIMIT_STANDARD' ? 'S' : 'B';
+
+            const fileName = `${values.tradeSymbol}${directionCode}${entryTypeCode}${behaviorCode}${year}${month}${day}${hours}${minutes}.set`;
+
+            // Update order comment with filename and UI version
+            formInputs.orderComment.value = `${fileName.replace('.set', '')} - PlanScan v3.0`;
+
+            // Generate .set file content with enhanced validation data
+            const setContent = generateSetFileContent(values, fileName);
+
+            // Create and download file
+            const dataBlob = new Blob([setContent], {type: 'text/plain'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = fileName;
+            link.click();
+
+            URL.revokeObjectURL(link.href);
+
+            // Update the display with the actual filename
+            updateSetFileDisplay();
+
+            // Show success message with validation summary
+            alert(`✅ .set file exported successfully!\n\nFilename: ${fileName}\nValidation: ${validationResults.overall ? 'PASSED' : 'FAILED'}`);
+        }
+
+        function generateSetFileContent(values, fileName) {
+            // Map internal constants to EA numeric enum values
+            // EA Enums: PLAN_LONG = 0, PLAN_SHORT = 1 | ENTRY_LIMIT = 0, ENTRY_MARKET = 1 | LIMIT_STANDARD = 0, LIMIT_BREAKOUT = 1
+            const planMap = {
+                'LONG': 0,      // PLAN_LONG = OP_BUY = 0
+                'SHORT': 1      // PLAN_SHORT = OP_SELL = 1
+            };
+
+            const entryTypeMap = {
+                'ENTRY_LIMIT': 0,   // ENTRY_LIMIT = 0
+                'ENTRY_MARKET': 1   // ENTRY_MARKET = 1
+            };
+
+            const behaviorMap = {
+                'LIMIT_STANDARD': 0, // LIMIT_STANDARD = 0
+                'LIMIT_BREAKOUT': 1  // LIMIT_BREAKOUT = 1
+            };
+
+            // Get numeric values with proper defaults
+            const planValue = planMap[values.plan] || 0;
+            const entryTypeValue = entryTypeMap[values.entryType] || 0;
+            const behaviorValue = behaviorMap[values.limitBehavior] || 0;
+
+            const entryPoint = parseFloat(values.entryPoint) || 0;
+            const stopLoss = parseFloat(values.stopLoss) || 0;
+            const totalVolume = parseFloat(values.totalVolume) || 0;
+            const riskPercent = parseFloat(values.riskPercent) || 0;
+            const tp1 = parseFloat(values.tp1) || 0;
+            const tp2 = parseFloat(values.tp2) || 0;
+            const tp3 = parseFloat(values.tp3) || 0;
+            const tp4 = parseFloat(values.tp4) || 0;
+            const tp5 = parseFloat(values.tp5) || 0;
+            const slippage = parseInt(values.slippage) || -1;
+
+            const lines = [
+                `# PlanScan v3.0 Generated .set File for PlanWithRisk v2.147+`,
+                `# Generated: ${new Date().toISOString()}`,
+                `# Symbol: ${values.tradeSymbol}`,
+                `# Direction: ${values.plan} (${planValue})`,
+                `# Entry: ${values.entryType} (${entryTypeValue})`,
+                `# Behavior: ${values.limitBehavior} (${behaviorValue})`,
+                `# Validation: ${validationResults.overall ? 'PASSED' : 'FAILED'}`,
+                ``,
+                `# Required Trading Parameters (EA expects these fields)`,
+                `TradeSymbol=${values.tradeSymbol}`,
+                `Plan=${planValue}`,
+                `EntryType=${entryTypeValue}`,
+                `LimitBehavior=${behaviorValue}`,
+                `EntryPoint=${entryPoint}`,
+                `StopLoss=${stopLoss}`,
+                `TotalVolume=${totalVolume}`,
+                `RiskPercent=${riskPercent}`,
+                `TP_1=${tp1}`,
+                `TP_2=${tp2}`,
+                `TP_3=${tp3}`,
+                `TP_4=${tp4}`,
+                `TP_5=${tp5}`,
+                `Slippage=${slippage}`,
+                `OrderComment=${fileName}`,
+                ``,
+                `# Additional EA Parameters (for reference)`,
+                `ValidationCode=${validationResults.overall ? brokerData.errorCodes.VALIDATION_SUCCESS : 'FAILED'}`,
+                `PriceDigits=${brokerData.priceInfo?.digits || 5}`,
+                `TickSize=${brokerData.priceInfo?.tickSize || 0.00001}`,
+                `MinLot=${brokerData.currentSymbol?.minLot || 0.01}`,
+                `MaxLot=${brokerData.currentSymbol?.maxLot || 100}`,
+                `LotStep=${brokerData.currentSymbol?.lotStep || 0.01}`
+            ];
+
+            return lines.join('\n');
+        }
+
+  
+        function clearForm() {
+            if (confirm('¿Estás seguro de que quieres limpiar el formulario?')) {
+                form.reset();
+
+                // Reset specific values
+                formInputs.totalVolume.value = '0';
+                formInputs.riskPercent.value = '2.0';
+                formInputs.slippage.value = '-1';
+                formInputs.orderComment.value = 'PlanScan v3.0';
+
+                // Clear image and analysis
+                imagePreview.style.display = 'none';
+                imagePreview.src = '';
+                aiAnalysis.style.display = 'none';
+                analyzeButton.style.display = 'none';
+                extractedData = null;
+                currentFile = null;
+
+                // Clear validations
+                Object.keys(formInputs).forEach(key => {
+                    hideValidation(key);
+                });
+
+                // Hide enhanced elements
+                brokerInfo.style.display = 'none';
+                validationSummary.style.display = 'none';
+                aiAnalysis.style.display = 'none';
+
+                // Reset broker data
+                brokerData.currentSymbol = null;
+                brokerData.priceInfo = null;
+
+                handleEntryTypeChange();
+                validateForm();
+            }
+        }
+    </script>
+</body>
+</html>
