@@ -54,3 +54,4 @@ Thumbs.db
 # Generados por la app
 /analisis_tecnico/output/
 /analisis_tecnico/.cache/
+analisis_tecnico/.*.md
