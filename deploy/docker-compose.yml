@@ -1,0 +1,29 @@
+#version: "3.9"
+
+services:
+  planscan:
+    container_name: planscan_compose
+    image: node:20
+    working_dir: /opt/app
+    volumes:
+      - ./app:/opt/app
+    command: ["node", "server.js"]
+    restart: always
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+
+      # --- ROUTER HTTP (port 80, redirect to HTTPS) ---
+
+      # --- ROUTER HTTPS (port 443, main secure route) ---
+
+      # --- MIDDLEWARE REDIRECT (shared by HTTP router) ---
+
+      # --- SERVICE CONFIG (port that Node listens on) ---
+      - "traefik.http.services.planscan-svc.loadbalancer.server.port=3000"
+
+networks:
+  traefik_proxy:
+    external: true

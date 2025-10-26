@@ -152,6 +152,27 @@
             flex-wrap: wrap;
         }
 
+        .symbol-requirement-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notice-icon {
+            font-size: 1.5em;
+            color: #856404;
+        }
+
+        .notice-text {
+            color: #856404;
+            font-size: 0.9em;
+        }
+
         .upload-btn {
             background: #2a5298;
             color: white;
@@ -706,28 +727,36 @@
 
         <div class="main-card">
             <!-- Image Upload Section -->
-            <div class="image-upload-section">
+            <div class="image-upload-section" id="imageUploadSection">
                 <div class="image-upload-title">
                     🤖 AI-Powered Trading Plan Analysis
                 </div>
 
-                <div class="upload-area" id="uploadArea">
+                <!-- Symbol requirement notice -->
+                <div id="symbolRequirementNotice" class="symbol-requirement-notice">
+                    <div class="notice-icon">⚠️</div>
+                    <div class="notice-text">
+                        <strong>Symbol Required:</strong> Please select and validate a trading symbol first before uploading your trading plan image.
+                    </div>
+                </div>
+
+                <div class="upload-area" id="uploadArea" style="opacity: 0.5; pointer-events: none;">
                     <div class="upload-icon">📸</div>
                     <div class="upload-text">
-                        Drag & drop your trading plan image here<br>
-                        <small>or use the buttons below</small>
+                        Select a symbol first to enable image upload<br>
+                        <small>Symbol validation is required before analysis</small>
                     </div>
                     <div class="upload-buttons">
-                        <button class="upload-btn" id="selectFileBtn">
+                        <button class="upload-btn" id="selectFileBtn" disabled>
                             📁 Select File
                         </button>
-                        <button class="upload-btn" id="pasteBtn">
+                        <button class="upload-btn" id="pasteBtn" disabled>
                             📋 Paste from Clipboard
                         </button>
                     </div>
-                    <input type="file" id="tradingImage" accept="image/*" style="display: none;">
+                    <input type="file" id="tradingImage" accept="image/*" style="display: none;" disabled>
                     </div>
-                    <button class="upload-btn" id="analyzeButton" style="display: none;">
+                    <button class="upload-btn" id="analyzeButton" style="display: none;" disabled>
                         🔍 Analyze Image
                     </button>
                 </div>
@@ -1061,6 +1090,8 @@
             loadSymbolsFromMD();
             initializeEventListeners();
             initializeBrokerData();
+            // Initialize image upload as disabled until symbol is validated
+            disableImageUpload();
 
         });
 
@@ -1072,22 +1103,30 @@
         async function loadSymbolsFromMD() {
             try {
                 symbolCount.textContent = 'Loading symbols...';
-                const response = await fetch('symbols.md');
-                const symbolsText = await response.text();
+                const response = await fetch('symbols.json');
+                const symbolsData = await response.json();
 
-                // Parse symbols from markdown format (one symbol per line)
-                const symbolLines = symbolsText.split('\n').filter(line => line.trim() !== '');
+                // Extract symbols from all categories
+                const allSymbolsArray = [];
+                Object.values(symbolsData.categories).forEach(category => {
+                    if (category.symbols && Array.isArray(category.symbols)) {
+                        allSymbolsArray.push(...category.symbols);
+                    }
+                });
+
+                // Extract unique symbols from all categories
+                const uniqueSymbols = [...new Set(allSymbolsArray.map(s => s.symbol))];
 
                 // Store raw symbols data for compatibility
-                symbolsMdData = symbolLines.map(line => line.trim());
+                symbolsMdData = uniqueSymbols;
 
-                allSymbols = symbolLines.map(symbol => ({
-                    symbol: symbol.trim(),
-                    name: symbol.trim(),
+                allSymbols = uniqueSymbols.map(symbol => ({
+                    symbol: symbol,
+                    name: symbol,
                     category: 'General',
                     categoryIcon: '📊',
                     categoryName: 'General Trading',
-                    fullInfo: { symbol: symbol.trim() }
+                    fullInfo: { symbol: symbol }
                 }));
 
                 // Sort symbols alphabetically
@@ -1212,6 +1251,7 @@
                 tradeSymbol.addEventListener('input', debounce(handleSymbolSearch, 200));
                 tradeSymbol.addEventListener('focus', showSymbolDropdown);
                 tradeSymbol.addEventListener('blur', debounce(hideSymbolDropdown, 200));
+                tradeSymbol.addEventListener('change', debounce(validateSymbol, 300)); // Validate on selection/change
             }
 
             // Modal Events
@@ -1457,6 +1497,27 @@
 
             const formData = new FormData();
             formData.append('tradingImage', currentFile);
+
+            // Add the selected symbol to ensure analysis uses the correct symbol
+            const selectedSymbol = document.getElementById('tradeSymbol').value.trim();
+            if (selectedSymbol && selectedSymbol !== 'CURRENT' && selectedSymbol !== 'CURRENT CHART SYMBOL') {
+                formData.append('selectedSymbol', selectedSymbol);
+                console.log(`[Analysis] Using user-selected symbol: ${selectedSymbol}`);
+
+                // Send comprehensive market data from Yahoo Finance for accurate analysis
+                if (window.currentSymbolData && window.currentSymbolData.price) {
+                    formData.append('currentPrice', window.currentSymbolData.price.toString());
+                    console.log(`[Analysis] Sending current price: ${window.currentSymbolData.price}`);
+
+                    // Send volatility data for realistic entry/stop loss levels
+                    if (window.currentSymbolData.volatility) {
+                        formData.append('volatilityData', JSON.stringify(window.currentSymbolData.volatility));
+                        console.log(`[Analysis] Sending volatility data:`, window.currentSymbolData.volatility);
+                    }
+                }
+            } else {
+                console.log(`[Analysis] Using default symbol detection from image`);
+            }
 
             try {
                 // Simulate progress
@@ -1960,32 +2021,72 @@ Tips:
             return patterns;
         }
 
-        // Enhanced display function with technical analysis
+        // Enhanced display function with technical analysis and risk analysis
         function displayEnhancedAIResults(data) {
             let html = '';
 
             // Extract technical analysis data
             const technicalAnalysis = extractTechnicalAnalysisData(data);
 
-            // Debug: Log the analysis to console
-            console.log('🔧 Technical Analysis Debug:', {
+            // Debug: Log the unified analysis to console
+            console.log('🔧 Unified Analysis Debug:', {
                 originalData: data,
                 technicalAnalysis: technicalAnalysis,
-                detectedPatterns: technicalAnalysis.detectedPatterns,
-                patternsCount: technicalAnalysis.detectedPatterns.length
+                riskAnalysis: data.risk_analysis,
+                validation: data.validation,
+                confidence: data.confidence,
+                metadata: data.metadata
             });
 
+            // Show warnings if any
+            if (data.user_warning || data.risk_warnings) {
+                html += '<div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-bottom: 15px;">';
+                html += '⚠️ <strong style="color: #ffc107;">Warnings:</strong><br>';
+                if (data.user_warning) {
+                    html += `&nbsp;&nbsp;• ${data.user_warning.message}<br>`;
+                }
+                if (data.risk_warnings && data.risk_warnings.length > 0) {
+                    data.risk_warnings.forEach(warning => {
+                        html += `&nbsp;&nbsp;• ${warning}<br>`;
+                    });
+                }
+                html += '</div>';
+            }
+
             // Core trading data with icons
+            html += '<div style="background: rgba(40, 167, 69, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px;">';
             if (data.direction) html += `📈 <strong>Direction:</strong> ${data.direction}<br>`;
             if (data.entry_price) html += `💰 <strong>Entry Price:</strong> ${data.entry_price}<br>`;
             if (data.stop_loss) html += `🛑 <strong>Stop Loss:</strong> ${data.stop_loss}<br>`;
+            html += '</div>';
 
             // Take Profits section
             if (data.take_profits && data.take_profits.length > 0) {
-                html += '<br>🎯 <strong>Take Profits:</strong><br>';
+                html += '<div style="background: rgba(23, 162, 184, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px;">';
+                html += '🎯 <strong>Take Profits:</strong><br>';
                 data.take_profits.forEach((tp, index) => {
                     html += `&nbsp;&nbsp;• TP${index + 1}: ${tp}<br>`;
                 });
+                html += '</div>';
+            }
+
+            // Risk Analysis Section (NEW)
+            if (data.risk_analysis) {
+                html += '<div style="background: rgba(220, 53, 69, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 15px;">';
+                html += '⚡ <strong>Risk Analysis:</strong><br>';
+                if (data.risk_analysis.risk_pips !== undefined) {
+                    html += `&nbsp;&nbsp;• Risk in pips: ${data.risk_analysis.risk_pips}<br>`;
+                }
+                if (data.risk_analysis.risk_percent !== undefined) {
+                    html += `&nbsp;&nbsp;• Risk percent: ${data.risk_analysis.risk_percent.toFixed(2)}%<br>`;
+                }
+                if (data.risk_analysis.risk_per_lot !== undefined) {
+                    html += `&nbsp;&nbsp;• Risk per lot: $${data.risk_analysis.risk_per_lot.toFixed(2)}<br>`;
+                }
+                if (data.risk_analysis.risk_reward_ratio !== undefined) {
+                    html += `&nbsp;&nbsp;• Risk/Reward Ratio: 1:${data.risk_analysis.risk_reward_ratio.toFixed(2)}<br>`;
+                }
+                html += '</div>';
             }
 
             // Technical levels section
@@ -2030,9 +2131,24 @@ Tips:
                 html += `<br>🔍 <strong>Detected Patterns:</strong> ${technicalAnalysis.detectedPatterns.join(', ')}<br>`;
             }
 
-            // AI analysis confidence
-            html += `<br><br>🤖 <strong>AI Analysis Confidence:</strong> High<br>`;
-            html += `⚡ <strong>Processing Time:</strong> Real-time<br>`;
+            // AI analysis confidence (dynamic based on unified response)
+            const confidenceLevel = data.confidence || 0.8;
+            const confidenceText = confidenceLevel >= 0.9 ? 'Very High' :
+                                  confidenceLevel >= 0.8 ? 'High' :
+                                  confidenceLevel >= 0.7 ? 'Medium' : 'Low';
+            html += `<br><br>🤖 <strong>AI Analysis Confidence:</strong> ${confidenceText} (${(confidenceLevel * 100).toFixed(1)}%)<br>`;
+
+            // Analysis metadata
+            if (data.metadata && data.metadata.analysis_timestamp) {
+                const timestamp = new Date(data.metadata.analysis_timestamp);
+                html += `⚡ <strong>Analysis Time:</strong> ${timestamp.toLocaleTimeString()}<br>`;
+            }
+            if (data.metadata && data.metadata.price_source) {
+                html += `💹 <strong>Price Source:</strong> ${data.metadata.price_source}<br>`;
+            }
+            if (data.metadata && data.metadata.model_used) {
+                html += `🧠 <strong>AI Model:</strong> ${data.metadata.model_used}<br>`;
+            }
 
             // Set the enhanced HTML content
                           // Append server-side technical analysis
@@ -2058,9 +2174,31 @@ Tips:
             }, 1500);
         }
 
-        // Enhanced apply function with technical analysis
+        // Enhanced apply function with technical analysis and unified validation
         function applyEnhancedExtractedData() {
             if (!extractedData) return;
+
+            // Handle unified validation warnings
+            if (extractedData.validation && extractedData.validation.coherence_check) {
+                const coherence = extractedData.validation.coherence_check;
+                if (!coherence.values_coherent) {
+                    console.warn(`[Unified] WARNING: Values were not coherent, adjustments were made`);
+                    if (coherence.issues_found && coherence.issues_found.length > 0) {
+                        console.warn(`[Unified] Issues found: ${coherence.issues_found.join(', ')}`);
+                    }
+                }
+            }
+
+            // Symbol consistency check (NEVER change user's symbol)
+            if (extractedData.symbol) {
+                const currentSymbol = formInputs.tradeSymbol.value.trim();
+                console.log(`[Unified] Analysis for symbol: ${extractedData.symbol} (user selected: ${currentSymbol})`);
+
+                // Log price information if available
+                if (extractedData.metadata && extractedData.metadata.price_used) {
+                    console.log(`[Unified] Price used: ${extractedData.metadata.price_used} (${extractedData.metadata.price_source})`);
+                }
+            }
 
             // Apply basic trading data
             if (extractedData.direction) {
@@ -2170,17 +2308,17 @@ Tips:
                 item.className = 'symbol-dropdown-item';
                 item.innerHTML = `
                     <div class="symbol-info">
-                        <span class="symbol-category-icon">${symbol.categoryIcon}</span>
-                        <div class="symbol-details">
-                            <div class="symbol-name">${symbol.symbol}</div>
-                            <div class="symbol-description">${symbol.name}</div>
-                        </div>
+                        <div class="symbol-name">${symbol.symbol}</div>
                     </div>
                 `;
 
-                item.addEventListener('click', () => {
+                item.addEventListener('click', async () => {
                     tradeSymbol.value = symbol.symbol;
                     hideSymbolDropdown();
+
+                    // Fetch real-time market data
+                    await fetchMarketData(symbol.symbol);
+
                     validateSymbol();
                     validateBrokerCompliance(symbol.symbol);
                 });
@@ -2340,6 +2478,7 @@ Tips:
 
             if (symbol === '') {
                 showValidation('tradeSymbol', 'error', 'Symbol is required', brokerData.errorCodes.SYMBOL_NOT_FOUND);
+                disableImageUpload(); // Disable image upload when symbol is empty
                 return { valid: false, type: 'error', message: 'Symbol required' };
             }
 
@@ -2359,11 +2498,13 @@ Tips:
                     const symbolInfo = allSymbols.find(s => s.symbol.toUpperCase() === symbol);
                     const message = `✅ Valid symbol: ${symbolInfo.name} (${symbolInfo.categoryName})`;
                     showValidation('tradeSymbol', 'success', message);
+                    enableImageUpload(symbol, symbolInfo);
                     return { valid: true, type: 'success', message: message };
                 } else {
                     // Symbol exists in symbols.md but not in the current session data
                     const message = `✅ EA Compatible Symbol: ${symbol} (validated with symbols.md)`;
                     showValidation('tradeSymbol', 'success', message);
+                    enableImageUpload(symbol, null);
                     return { valid: true, type: 'success', message: message };
                 }
             } else if (symbolExists) {
@@ -2371,18 +2512,455 @@ Tips:
                 const symbolInfo = allSymbols.find(s => s.symbol.toUpperCase() === symbol);
                 const message = `⚠️ Symbol found in database but not in EA compatibility list: ${symbolInfo.name} (${symbolInfo.categoryName})`;
                 showValidation('tradeSymbol', 'warning', message);
+                enableImageUpload(symbol, symbolInfo); // Enable with warning
                 return { valid: true, type: 'warning', message: message };
             } else {
                 // Symbol not found in either file
                 const message = `❌ Symbol not found in EA compatibility list or database: ${symbol}`;
                 showValidation('tradeSymbol', 'error', message, brokerData.errorCodes.SYMBOL_NOT_FOUND);
+                disableImageUpload();
                 return { valid: false, type: 'error', message: message };
             }
         }
 
-        function validateRiskPercent(riskPercent) {
-            const minRisk = brokerData.validationRules.riskPercent.min;
-            const maxRisk = brokerData.validationRules.riskPercent.max;
+        async function enableImageUpload(symbol, symbolInfo) {
+            const uploadArea = document.getElementById('uploadArea');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const pasteBtn = document.getElementById('pasteBtn');
+            const tradingImage = document.getElementById('tradingImage');
+            const symbolRequirementNotice = document.getElementById('symbolRequirementNotice');
+            const analyzeButton = document.getElementById('analyzeButton');
+
+            // Enable upload controls
+            uploadArea.style.opacity = '1';
+            uploadArea.style.pointerEvents = 'auto';
+            selectFileBtn.disabled = false;
+            pasteBtn.disabled = false;
+            tradingImage.disabled = false;
+            analyzeButton.disabled = false;
+
+            // Show loading state for price lookup
+            const uploadText = uploadArea.querySelector('.upload-text');
+            uploadText.innerHTML = `
+                Drag & drop your trading plan image here<br>
+                <small>Symbol ready: <strong>${symbol}</strong> ${symbolInfo ? `(${symbolInfo.categoryName})` : '(EA Compatible)'}</small>
+                <div id="priceLookup" style="margin-top: 10px; color: #666;">🔍 Looking up current price...</div>
+            `;
+
+            // Hide requirement notice
+            symbolRequirementNotice.style.display = 'none';
+
+            // Update upload icon to show success
+            const uploadIcon = uploadArea.querySelector('.upload-icon');
+            uploadIcon.textContent = '✅';
+            uploadIcon.style.color = '#28a745';
+
+            // Lookup current price from Yahoo Finance
+            await lookupSymbolMarketData(symbol);
+
+            console.log(`[UI] Image upload enabled for symbol: ${symbol}`);
+        }
+
+        async function lookupSymbolMarketData(symbol) {
+            const priceLookupElement = document.getElementById('priceLookup');
+            if (!priceLookupElement) return;
+
+            const yahooSymbol = convertToYahooSymbol(symbol);
+            console.log(`[Market Data] Getting price + volatility for: ${symbol} -> ${yahooSymbol}`);
+
+            // Try multiple endpoints with historical data for volatility calculation
+            const endpoints = [
+                `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=30d`,
+                `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=30d`,
+                // Fallback to a CORS proxy if direct access fails
+                `https://corsproxy.io/?https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=30d`
+            ];
+
+            let lastError = null;
+
+            for (let i = 0; i < endpoints.length; i++) {
+                try {
+                    const url = endpoints[i];
+                    const isProxy = url.includes('corsproxy.io');
+
+                    priceLookupElement.innerHTML = `
+                        <div style="color: #666; font-weight: bold;">
+                            🔍 Analyzing market data... (Attempt ${i + 1}/${endpoints.length})
+                        </div>
+                    `;
+
+                    console.log(`[Market Data] Attempt ${i + 1}: ${url}`);
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            'Accept': 'application/json',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        },
+                        mode: isProxy ? 'cors' : 'cors'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.chart && data.chart.result && data.chart.result.length > 0) {
+                        const result = data.chart.result[0];
+                        const meta = result.meta;
+                        const timestamps = result.timestamp;
+                        const quotes = result.indicators.quote[0];
+                        const closes = quotes.close;
+                        const highs = quotes.high;
+                        const lows = quotes.low;
+
+                        if (meta && timestamps && closes && closes.length > 1) {
+                            const currentPrice = meta.regularMarketPrice || meta.previousClose || closes[closes.length - 1];
+                            const currency = meta.currency || 'USD';
+                            const marketState = meta.marketState || 'unknown';
+                            const priceChange = meta.regularMarketPrice - meta.previousClose;
+                            const percentChange = meta.regularMarketChangePercent;
+
+                            // Calculate volatility from historical data
+                            const returns = [];
+                            for (let i = 1; i < closes.length; i++) {
+                                if (closes[i] && closes[i-1]) {
+                                    returns.push((closes[i] - closes[i-1]) / closes[i-1]);
+                                }
+                            }
+
+                            // Calculate annualized volatility
+                            const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+                            const variance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0) / returns.length;
+                            const dailyVolatility = Math.sqrt(variance);
+                            const annualizedVolatility = dailyVolatility * Math.sqrt(252) * 100; // Annualized percentage
+
+                            // Calculate Average True Range (ATR) for stop loss distance
+                            const trueRanges = [];
+                            for (let i = 1; i < closes.length; i++) {
+                                if (highs[i] && lows[i] && highs[i-1] && lows[i-1]) {
+                                    const tr = Math.max(
+                                        highs[i] - lows[i],
+                                        Math.abs(highs[i] - closes[i-1]),
+                                        Math.abs(lows[i] - closes[i-1])
+                                    );
+                                    trueRanges.push(tr);
+                                }
+                            }
+
+                            const avgTrueRange = trueRanges.reduce((a, b) => a + b, 0) / trueRanges.length;
+                            const atrPercentage = (avgTrueRange / currentPrice) * 100;
+
+                            if (currentPrice) {
+                                const changeIcon = priceChange >= 0 ? '📈' : '📉';
+                                const changeColor = priceChange >= 0 ? '#28a745' : '#dc3545';
+                                const formattedPrice = formatPrice(currentPrice, currency);
+                                const formattedChange = formatPriceChange(priceChange, percentChange, currency);
+                                const source = isProxy ? 'Yahoo Finance (Proxy)' : 'Yahoo Finance';
+
+                                // Determine volatility level
+                                let volatilityLevel = 'Low';
+                                let volatilityColor = '#28a745';
+                                if (annualizedVolatility > 25) {
+                                    volatilityLevel = 'High';
+                                    volatilityColor = '#dc3545';
+                                } else if (annualizedVolatility > 15) {
+                                    volatilityLevel = 'Medium';
+                                    volatilityColor = '#ffc107';
+                                }
+
+                                priceLookupElement.innerHTML = `
+                                    <div style="color: #28a745; font-weight: bold;">
+                                        ${changeIcon} Current Price: ${formattedPrice}
+                                        <span style="color: ${changeColor}; font-size: 0.9em;">${formattedChange}</span>
+                                        <br><small style="color: #666;">Market: ${marketState} | Source: ${source}</small>
+                                        <br><small style="color: ${volatilityColor};">📊 Volatility: ${volatilityLevel} (${annualizedVolatility.toFixed(1)}%) | ATR: ${atrPercentage.toFixed(2)}%</small>
+                                    </div>
+                                `;
+
+                                // Store comprehensive market data for later use
+                                window.currentSymbolData = {
+                                    symbol: symbol,
+                                    yahooSymbol: yahooSymbol,
+                                    price: currentPrice,
+                                    currency: currency,
+                                    change: priceChange,
+                                    percentChange: percentChange,
+                                    marketState: marketState,
+                                    source: source,
+                                    volatility: {
+                                        annualized: annualizedVolatility,
+                                        daily: dailyVolatility * 100,
+                                        level: volatilityLevel,
+                                        atrPercentage: atrPercentage,
+                                        avgTrueRange: avgTrueRange,
+                                        recommendedStopDistance: atrPercentage * 1.5, // 1.5x ATR for stop loss
+                                        recommendedEntryDistance: atrPercentage * 0.5  // 0.5x ATR for limit entries
+                                    },
+                                    timestamp: new Date().toISOString()
+                                };
+
+                                // Update broker data with current price for better validation
+                                updateBrokerDataWithCurrentPrice(currentPrice, symbol);
+
+                                // Update risk calculation with current price and volatility
+                                updateRiskCalculationWithCurrentPrice(currentPrice, symbol);
+
+                                console.log(`[Market Data] ✅ Complete data for ${symbol}:`);
+                                console.log(`  Price: ${formattedPrice}`);
+                                console.log(`  Volatility: ${annualizedVolatility.toFixed(1)}% (${volatilityLevel})`);
+                                console.log(`  ATR: ${atrPercentage.toFixed(2)}%`);
+                                return;
+                            }
+                        }
+                    }
+
+                    throw new Error('No market data found in response');
+
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`[Yahoo Finance] Attempt ${i + 1} failed for ${symbol}:`, error.message);
+
+                    // If this is a CORS error and we have more endpoints, continue trying
+                    if (error.message.includes('CORS') || error.message.includes('NetworkError')) {
+                        continue;
+                    }
+
+                    // For other errors, try next endpoint
+                    continue;
+                }
+            }
+
+            // All endpoints failed
+            const errorMessage = lastError?.message || 'Unknown error';
+            const isCorsError = errorMessage.includes('CORS') || errorMessage.includes('NetworkError');
+
+            priceLookupElement.innerHTML = `
+                <div style="color: ${isCorsError ? '#dc3545' : '#ffc107'}; font-weight: bold;">
+                    ${isCorsError ? '🚫' : '⚠️'} Price data unavailable<br>
+                    <small style="color: #666;">${isCorsError ? 'CORS/Network Error - Try using HTTPS or different browser' : `Error: ${errorMessage}`}</small>
+                    ${isCorsError ? '<br><small style="color: #666;">Symbol mapping: ' + symbol + ' → ' + yahooSymbol + '</small>' : ''}
+                </div>
+            `;
+
+            console.error(`[Yahoo Finance] All attempts failed for ${symbol}:`, errorMessage);
+        }
+
+        function convertToYahooSymbol(symbol) {
+            // Convert common symbol formats to Yahoo Finance format
+            const conversions = {
+                // Forex pairs
+                'EURUSD': 'EURUSD=X',
+                'GBPUSD': 'GBPUSD=X',
+                'USDJPY': 'USDJPY=X',
+                'USDCHF': 'USDCHF=X',
+                'AUDUSD': 'AUDUSD=X',
+                'USDCAD': 'USDCAD=X',
+                'NZDUSD': 'NZDUSD=X',
+
+                // Crypto
+                'BTCUSD': 'BTC-USD',
+                'ETHUSD': 'ETH-USD',
+                'BTCUSDT': 'BTC-USD',
+                'ETHUSDT': 'ETH-USD',
+                'ETFUSD': 'ETH-USD',  // ETFUSD could be ETH typo, map to Ethereum
+
+                // More crypto pairs
+                'ADAUSD': 'ADA-USD',
+                'BNBUSD': 'BNB-USD',
+                'SOLUSD': 'SOL-USD',
+                'XRPUSD': 'XRP-USD',
+                'DOTUSD': 'DOT-USD',
+
+                // Indices
+                'SPX': '^GSPC',      // S&P 500
+                'NAS100': '^IXIC',   // NASDAQ Composite
+                'US30': '^DJI',      // Dow Jones
+                'DAX': '^GDAXI',     // DAX
+                'FTSE': '^FTSE',     // FTSE 100
+                'NQ': '^IXIC',       // NASDAQ NQ
+                'ES': '^GSPC',       // S&P 500 ES
+
+                // Popular ETFs
+                'SPY': 'SPY',        // SPDR S&P 500 ETF
+                'QQQ': 'QQQ',        // Invesco QQQ Trust
+                'IWM': 'IWM',        // iShares Russell 2000 ETF
+                'DIA': 'DIA',        // SPDR Dow Jones ETF
+                'VTI': 'VTI',        // Vanguard Total Stock Market ETF
+                'VOO': 'VOO',        // Vanguard S&P 500 ETF
+            };
+
+            // Check for exact match first
+            if (conversions[symbol.toUpperCase()]) {
+                return conversions[symbol.toUpperCase()];
+            }
+
+            // Check for partial matches (forex patterns)
+            const upperSymbol = symbol.toUpperCase();
+            if (upperSymbol.includes('/') && upperSymbol.length === 7) {
+                // Convert EUR/USD to EURUSD=X
+                const cleanSymbol = upperSymbol.replace('/', '') + '=X';
+                return cleanSymbol;
+            }
+
+            // For stocks, add suffix based on likely exchange
+            if (upperSymbol.length <= 5 && !upperSymbol.includes('=')) {
+                // Assume US stocks if no suffix
+                return upperSymbol;
+            }
+
+            // Return original symbol if no conversion needed
+            return upperSymbol;
+        }
+
+        function formatPrice(price, currency) {
+            if (price === null || price === undefined) return 'N/A';
+
+            // Format based on price magnitude
+            let decimals = 2;
+            if (price < 0.01) decimals = 6;
+            else if (price < 1) decimals = 4;
+            else if (price >= 1000) decimals = 0;
+
+            const formattedPrice = price.toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+
+            return `${formattedPrice} ${currency}`;
+        }
+
+        function formatPriceChange(change, percentChange, currency) {
+            if (change === null || change === undefined) return '';
+
+            const sign = change >= 0 ? '+' : '';
+            const changeStr = formatPrice(Math.abs(change), currency);
+            const percentStr = percentChange ? `${sign}${percentChange.toFixed(2)}%` : '';
+
+            return `(${sign}${changeStr} ${percentStr})`;
+        }
+
+        function disableImageUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const pasteBtn = document.getElementById('pasteBtn');
+            const tradingImage = document.getElementById('tradingImage');
+            const symbolRequirementNotice = document.getElementById('symbolRequirementNotice');
+
+            // Disable upload controls
+            uploadArea.style.opacity = '0.5';
+            uploadArea.style.pointerEvents = 'none';
+            selectFileBtn.disabled = true;
+            pasteBtn.disabled = true;
+            tradingImage.disabled = true;
+
+            // Reset upload text
+            const uploadText = uploadArea.querySelector('.upload-text');
+            uploadText.innerHTML = `
+                Select a symbol first to enable image upload<br>
+                <small>Symbol validation is required before analysis</small>
+            `;
+
+            // Show requirement notice
+            symbolRequirementNotice.style.display = 'flex';
+
+            // Reset upload icon
+            const uploadIcon = uploadArea.querySelector('.upload-icon');
+            uploadIcon.textContent = '📸';
+            uploadIcon.style.color = '#2a5298';
+
+            // Clear any uploaded image
+            const imagePreview = document.getElementById('imagePreview');
+            const analyzeButton = document.getElementById('analyzeButton');
+            imagePreview.style.display = 'none';
+            analyzeButton.style.display = 'none';
+
+            // Clear price data
+            if (window.currentSymbolData) {
+                delete window.currentSymbolData;
+                console.log('[UI] Price data cleared');
+            }
+
+            console.log('[UI] Image upload disabled - symbol validation required');
+        }
+
+        function updateBrokerDataWithCurrentPrice(currentPrice, symbol) {
+        // Update broker data with real-time price information
+        if (brokerData.currentSymbol) {
+            brokerData.currentSymbol.currentPrice = currentPrice;
+            brokerData.currentSymbol.priceTimestamp = new Date().toISOString();
+
+            // Calculate price-based risk metrics
+            const symbolCategory = brokerData.currentSymbol.categoryName || '';
+
+            // Adjust validation rules based on price and category
+            if (symbolCategory.includes('Forex')) {
+                // Forex: Tighter spreads, smaller pip movements
+                brokerData.currentSymbol.recommendedStopLoss = currentPrice * 0.002; // 20 pips
+                brokerData.currentSymbol.recommendedTakeProfit1 = currentPrice * 0.003; // 30 pips
+                brokerData.currentSymbol.maxRiskPercent = 2; // 2% max for forex
+            } else if (symbolCategory.includes('Crypto')) {
+                // Crypto: Higher volatility, wider stops
+                brokerData.currentSymbol.recommendedStopLoss = currentPrice * 0.05; // 5%
+                brokerData.currentSymbol.recommendedTakeProfit1 = currentPrice * 0.08; // 8%
+                brokerData.currentSymbol.maxRiskPercent = 3; // 3% max for crypto
+            } else if (symbolCategory.includes('Indices') || symbolCategory.includes('Stocks')) {
+                // Indices/Stocks: Moderate volatility
+                brokerData.currentSymbol.recommendedStopLoss = currentPrice * 0.02; // 2%
+                brokerData.currentSymbol.recommendedTakeProfit1 = currentPrice * 0.04; // 4%
+                brokerData.currentSymbol.maxRiskPercent = 2.5; // 2.5% max for stocks
+            } else {
+                // Default: Conservative settings
+                brokerData.currentSymbol.recommendedStopLoss = currentPrice * 0.03; // 3%
+                brokerData.currentSymbol.recommendedTakeProfit1 = currentPrice * 0.06; // 6%
+                brokerData.currentSymbol.maxRiskPercent = 2; // 2% max default
+            }
+
+            console.log(`[Broker Data] Updated for ${symbol}: Current Price: ${currentPrice}, Recommended SL: ${brokerData.currentSymbol.recommendedStopLoss}`);
+        }
+
+        // Update price info with current market data
+        if (brokerData.priceInfo) {
+            brokerData.priceInfo.currentPrice = currentPrice;
+            brokerData.priceInfo.priceTimestamp = new Date().toISOString();
+
+            // Calculate dynamic pip value based on current price
+            if (symbol.includes('JPY')) {
+                brokerData.priceInfo.pipValue = 0.01; // JPY pairs have different pip value
+            } else if (brokerData.currentSymbol && brokerData.currentSymbol.categoryName && brokerData.currentSymbol.categoryName.includes('Crypto')) {
+                brokerData.priceInfo.pipValue = currentPrice * 0.0001; // Crypto pips are percentage-based
+            } else {
+                brokerData.priceInfo.pipValue = 0.0001; // Standard forex pip
+            }
+        }
+    }
+
+    function updateRiskCalculationWithCurrentPrice(currentPrice, symbol) {
+        // This function will be called when form values change to include current price
+        if (window.currentSymbolData && window.currentSymbolData.price) {
+            // Trigger immediate validation of current form values
+            const currentFormValues = getFormValues();
+            if (currentFormValues.tradeSymbol === symbol) {
+                // Re-validate with current price context
+                validatePriceLevels(currentFormValues);
+                updateRiskCalculation(currentFormValues);
+            }
+        }
+    }
+
+    function validateRiskPercent(riskPercent) {
+            // Use dynamic max risk based on current symbol data
+            let maxRisk = brokerData.validationRules.riskPercent.max;
+            let minRisk = brokerData.validationRules.riskPercent.min;
+
+            // Adjust max risk based on symbol's current price and category
+            if (brokerData.currentSymbol && brokerData.currentSymbol.maxRiskPercent) {
+                maxRisk = Math.min(maxRisk, brokerData.currentSymbol.maxRiskPercent);
+            }
 
             // Check if risk percent is empty or zero
             if (!riskPercent || riskPercent === 0) {
@@ -2405,21 +2983,200 @@ Tips:
             }
 
             // Check if risk percent is within valid range
-            if (riskPercent < minRisk || riskPercent > maxRisk) {
+            if (riskPercent < minRisk) {
                 return {
                     valid: false,
                     type: 'error',
-                    message: `Risk percent must be between ${minRisk}% and ${maxRisk}%`,
+                    message: `Risk percent cannot be less than ${minRisk}%`,
                     code: brokerData.errorCodes.RISK_PERCENT_INVALID
                 };
+            }
+
+            if (riskPercent > maxRisk) {
+                const accountBase = getAccountBase();
+                let warningMessage = `Risk percent cannot exceed ${maxRisk}% of account ($${(accountBase * maxRisk / 100).toFixed(2)})`;
+                if (brokerData.currentSymbol && brokerData.currentSymbol.maxRiskPercent < brokerData.validationRules.riskPercent.max) {
+                    warningMessage += ` (reduced for ${brokerData.currentSymbol.categoryName || 'this symbol'})`;
+                }
+                warningMessage += `. Professional risk management recommends keeping risk under 5%.`;
+                return {
+                    valid: false,
+                    type: 'error',
+                    message: warningMessage,
+                    code: brokerData.errorCodes.RISK_PERCENT_INVALID
+                };
+            }
+
+            // Add context-specific success message
+            let successMessage = `Risk percent acceptable: ${riskPercent}%`;
+            if (brokerData.currentSymbol && window.currentSymbolData) {
+                const currentPrice = window.currentSymbolData.price;
+                const recommendedSL = brokerData.currentSymbol.recommendedStopLoss;
+                if (recommendedSL) {
+                    const pipDistance = Math.abs(currentPrice - recommendedSL);
+                    successMessage += ` | Recommended SL distance: ~${pipDistance.toFixed(5)}`;
+                }
             }
 
             return {
                 valid: true,
                 type: 'success',
-                message: `Risk percent acceptable: ${riskPercent}%`
+                message: successMessage
             };
         }
+
+    function validatePriceWithCurrentMarket(values) {
+        if (!window.currentSymbolData || !window.currentSymbolData.price) {
+            return { valid: true, message: 'Current market price not available' };
+        }
+
+        const currentPrice = window.currentSymbolData.price;
+        const symbol = window.currentSymbolData.symbol;
+        const direction = values.plan;
+        const entryPrice = parseFloat(values.entryPrice) || currentPrice;
+        const stopLoss = parseFloat(values.stopLoss);
+
+        // Handle take profits - convert individual tp1, tp2, etc. to array
+        const takeProfits = [];
+        for (let i = 1; i <= 5; i++) {
+            const tp = values[`tp${i}`];
+            if (tp && tp !== '' && tp !== '0') {
+                const tpValue = parseFloat(tp);
+                if (!isNaN(tpValue)) {
+                    takeProfits.push(tpValue);
+                }
+            }
+        }
+
+        const validations = [];
+
+        // Validate entry price against current market price
+        const entryDifference = Math.abs(entryPrice - currentPrice);
+        const entryDifferencePercent = (entryDifference / currentPrice) * 100;
+
+        if (entryDifferencePercent > 5) {
+            validations.push({
+                valid: false,
+                type: 'warning',
+                field: 'entryPrice',
+                message: `Entry price is ${entryDifferencePercent.toFixed(1)}% away from current market price (${currentPrice})`
+            });
+        }
+
+        // Validate stop loss distance from current price
+        if (stopLoss && !isNaN(stopLoss)) {
+            const slDistance = Math.abs(stopLoss - currentPrice);
+            const slDistancePercent = (slDistance / currentPrice) * 100;
+
+            // Check if stop loss is reasonable for this symbol type
+            let recommendedMin = 0.1; // Default 0.1%
+            let recommendedMax = 5.0;  // Default 5%
+            let symbolType = 'General';
+
+            if (brokerData.currentSymbol) {
+                if (brokerData.currentSymbol.categoryName?.includes('Forex') ||
+                    brokerData.currentSymbol.category?.includes('Forex')) {
+                    recommendedMin = 0.05; // 5 pips minimum
+                    recommendedMax = 2.0;   // 200 pips maximum
+                    symbolType = 'Forex';
+                } else if (brokerData.currentSymbol.categoryName?.includes('Crypto') ||
+                          brokerData.currentSymbol.category?.includes('Crypto')) {
+                    recommendedMin = 1.0;   // 1% minimum for crypto
+                    recommendedMax = 10.0;  // 10% maximum
+                    symbolType = 'Crypto';
+                } else if (brokerData.currentSymbol.categoryName?.includes('Indices') ||
+                          brokerData.currentSymbol.category?.includes('Indices')) {
+                    recommendedMin = 0.5;   // 0.5% minimum for indices
+                    recommendedMax = 3.0;   // 3% maximum
+                    symbolType = 'Indices';
+                }
+            }
+
+            if (slDistancePercent < recommendedMin) {
+                validations.push({
+                    valid: false,
+                    type: 'error',
+                    field: 'stopLoss',
+                    message: `Stop Loss too close to current price (${slDistancePercent.toFixed(2)}% < ${recommendedMin}% minimum for ${symbolType})`
+                });
+            } else if (slDistancePercent > recommendedMax) {
+                validations.push({
+                    valid: false,
+                    type: 'warning',
+                    field: 'stopLoss',
+                    message: `Stop Loss very far from current price (${slDistancePercent.toFixed(1)}% > ${recommendedMax}% recommended for ${symbolType})`
+                });
+            } else {
+                validations.push({
+                    valid: true,
+                    type: 'success',
+                    field: 'stopLoss',
+                    message: `Stop Loss distance adequate: ${slDistancePercent.toFixed(2)}%`
+                });
+            }
+        }
+
+        // Validate take profit distances
+        takeProfits.forEach((tp, index) => {
+            const tpDistance = Math.abs(tp - currentPrice);
+            const tpDistancePercent = (tpDistance / currentPrice) * 100;
+
+            let recommendedMin = 0.2; // Default 0.2%
+
+            if (brokerData.currentSymbol) {
+                if (brokerData.currentSymbol.categoryName?.includes('Forex')) {
+                    recommendedMin = 0.1; // 10 pips minimum for forex
+                } else if (brokerData.currentSymbol.categoryName?.includes('Crypto')) {
+                    recommendedMin = 1.5; // 1.5% minimum for crypto
+                }
+            }
+
+            if (tpDistancePercent < recommendedMin) {
+                validations.push({
+                    valid: false,
+                    type: 'warning',
+                    field: `takeProfit${index + 1}`,
+                    message: `TP${index + 1} close to current price (${tpDistancePercent.toFixed(2)}% < ${recommendedMin}% recommended)`
+                });
+            }
+        });
+
+        // Risk/Reward analysis
+        if (stopLoss && takeProfits.length > 0) {
+            const risk = Math.abs(entryPrice - stopLoss);
+            const reward = Math.abs(takeProfits[0] - entryPrice);
+            const riskRewardRatio = reward / risk;
+
+            if (riskRewardRatio < 1.0) {
+                validations.push({
+                    valid: false,
+                    type: 'warning',
+                    field: 'takeProfit1',
+                    message: `Risk/Reward ratio unfavorable: 1:${riskRewardRatio.toFixed(2)} (recommend 1:1.5 or higher)`
+                });
+            } else if (riskRewardRatio >= 2.0) {
+                validations.push({
+                    valid: true,
+                    type: 'success',
+                    field: 'riskReward',
+                    message: `Excellent Risk/Reward: 1:${riskRewardRatio.toFixed(2)}`
+                });
+            } else {
+                validations.push({
+                    valid: true,
+                    type: 'success',
+                    field: 'riskReward',
+                    message: `Good Risk/Reward: 1:${riskRewardRatio.toFixed(2)}`
+                });
+            }
+        }
+
+        return {
+            valid: validations.filter(v => !v.valid).length === 0,
+            validations: validations,
+            summary: `Current Price: ${currentPrice} | Market-based validation complete`
+        };
+    }
 
         // ==================== EA-SPECIFIC VALIDATION FUNCTIONS ====================
 
@@ -2688,6 +3445,28 @@ Tips:
                     });
                     isValid = false;
                 }
+            }
+
+            // Additional market-based validation if current price is available
+            if (window.currentSymbolData && window.currentSymbolData.price) {
+                const marketValidation = validatePriceWithCurrentMarket(values);
+                if (!marketValidation.valid) {
+                    isValid = false;
+                }
+                // Add market validation messages to the existing messages
+                marketValidation.validations.forEach(validation => {
+                    messages.push({
+                        type: validation.type,
+                        message: validation.message,
+                        field: validation.field
+                    });
+                    // Show validation for specific field
+                    if (validation.field && validation.type) {
+                        const fieldType = validation.type === 'error' ? 'error' :
+                                         validation.type === 'warning' ? 'warning' : 'success';
+                        showValidation(validation.field, fieldType, validation.message);
+                    }
+                });
             }
 
             return { valid: isValid, messages: messages };
@@ -3083,14 +3862,29 @@ Stop Level: ${brokerReqs.stopLevel || 'N/A'}
             const riskPercent = parseFloat(values.riskPercent);
 
             const riskDistance = Math.abs(entry - sl);
-            const accountSize = 10000; // Assumed account size
+
+            // Get account size from user input or use reasonable default
+            const totalVolume = parseFloat(values.totalVolume) || 0;
+            const accountSize = totalVolume > 0 ? totalVolume : 10000; // User specified or default
+
+            // Risk percentage should be based on actual account size, not assumed
             const riskAmount = accountSize * (riskPercent / 100);
 
+            // Validate that risk amount doesn't exceed 2% of account
+            const maxRiskAmount = accountSize * 0.02; // 2% maximum risk
+            if (riskAmount > maxRiskAmount) {
+                console.warn(`[Risk] Risk amount $${riskAmount.toFixed(2)} exceeds 2% of account $${accountSize.toFixed(2)}`);
+            }
+
             // Enhanced risk calculation with broker data
+            const riskPercentOfAccount = (riskAmount / accountSize) * 100;
+            const maxAllowedRisk = 2; // 2% maximum
+
             let riskDetails = `
 Risk Distance: ${formatNumber(riskDistance)}
 Account Size: $${accountSize.toLocaleString()}
-Risk Amount: $${riskAmount.toFixed(2)} (${riskPercent}%)
+Risk Amount: $${riskAmount.toFixed(2)} (${riskPercentOfAccount.toFixed(2)}% of account)
+Max Risk Allowed: $${(accountSize * maxAllowedRisk / 100).toFixed(2)} (${maxAllowedRisk}%)
             `;
 
             // Add broker-specific calculation if available
@@ -3199,11 +3993,6 @@ Broker Min Lot: ${brokerData.currentSymbol.minLot}
 
             // Update order comment with filename and UI version
             formInputs.orderComment.value = `${fileName.replace('.set', '')} - PlanScan v3.0`;
-
-            const setContent = generateSetFileContent(values, fileName);
-
-            // Show the .set file information
-            aiResults.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em; line-height: 1.4;">${setContent}</pre>`;
             aiAnalysis.style.display = 'block';
         }
 
@@ -3458,6 +4247,103 @@ Broker Min Lot: ${brokerData.currentSymbol.minLot}
                 validateForm();
             }
         }
+
+        // ==================== YAHOO FINANCE INTEGRATION ====================
+
+        async function fetchMarketData(symbol) {
+            const upperSymbol = symbol.toUpperCase();
+            console.log(`[MarketData] Fetching real-time data for ${upperSymbol}`);
+
+            try {
+                const response = await fetch(`/api/market-data/${upperSymbol}`);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const marketData = result.data;
+
+                    // Update market data display
+                    updateMarketDataDisplay(marketData);
+
+                    // Show success message
+                    showValidation('tradeSymbol', 'success',
+                        `✅ Real-time data loaded for ${upperSymbol}: $${marketData.price?.toFixed(marketData.digits || 5)}`);
+
+                    console.log(`[MarketData] Real-time data obtained:`, marketData);
+
+                    // Store market data globally for later use
+                    window.currentMarketData = marketData;
+
+                } else {
+                    console.warn(`[MarketData] Failed to fetch data for ${upperSymbol}`);
+                    showValidation('tradeSymbol', 'warning',
+                        `⚠️ Using local data for ${upperSymbol} (Real-time unavailable)`);
+                }
+            } catch (error) {
+                console.error(`[MarketData] Error fetching data for ${upperSymbol}:`, error);
+                showValidation('tradeSymbol', 'warning',
+                    `⚠️ Using cached data for ${upperSymbol} (Connection error)`);
+            }
+        }
+
+        function updateMarketDataDisplay(marketData) {
+            // Create or update market data display
+            let marketDataDiv = document.getElementById('marketDataDisplay');
+
+            if (!marketDataDiv) {
+                marketDataDiv = document.createElement('div');
+                marketDataDiv.id = 'marketDataDisplay';
+                marketDataDiv.style.cssText = `
+                    background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+                    border: 1px solid #4CAF50;
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin-top: 10px;
+                    display: none;
+                    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.1);
+                `;
+
+                // Insert after symbol validation message
+                const validationMsg = document.getElementById('tradeSymbol-validation');
+                if (validationMsg && validationMsg.parentNode) {
+                    validationMsg.parentNode.insertBefore(marketDataDiv, validationMsg.nextSibling);
+                }
+            }
+
+            const price = marketData.price || 0;
+            const change = marketData.change || 0;
+            const changePercent = marketData.changePercent || 0;
+            const digits = marketData.digits || 5;
+
+            marketDataDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="color: #2e7d32; font-size: 14px;">📊 Real-Time Market Data</strong>
+                    <span style="font-size: 11px; color: #666; background: white; padding: 2px 6px; border-radius: 10px;">Yahoo Finance</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                    <div style="background: white; padding: 8px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 2px;">Price</div>
+                        <div style="font-weight: bold; color: #2e7d32; font-size: 14px;">$${price.toFixed(digits)}</div>
+                    </div>
+                    <div style="background: white; padding: 8px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 2px;">Spread</div>
+                        <div style="font-weight: bold; color: #333; font-size: 14px;">${(marketData.spread || 0).toFixed(1)} pts</div>
+                    </div>
+                    <div style="background: white; padding: 8px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 2px;">24h Change</div>
+                        <div style="font-weight: bold; color: ${change >= 0 ? '#4CAF50' : '#f44336'}; font-size: 14px;">
+                            ${change >= 0 ? '+' : ''}${change.toFixed(digits)} (${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: #666; margin-top: 8px; text-align: center;">
+                    Last updated: ${new Date(marketData.timestamp || Date.now()).toLocaleTimeString()}
+                </div>
+            `;
+
+            marketDataDiv.style.display = 'block';
+        }
+
+        console.log('[PlanScan v3.2] Enhanced with Yahoo Finance integration - Ready!');
     </script>
 </body>
 </html>
